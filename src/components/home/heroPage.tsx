@@ -1,3 +1,4 @@
+import Link from "next/link";
 
 export default function HeroPage(){
 
@@ -20,13 +21,10 @@ export default function HeroPage(){
         </p>
 
         <div className="mt-8 flex justify-center gap-6">
-          <button className="rounded-xl bg-blue-600 px-8 py-4 text-lg font-semibold text-white hover:bg-blue-700">
+          <Link href="/register" className="rounded-xl bg-blue-600 px-8 py-4 text-lg font-semibold text-white hover:bg-blue-700">
             Get started
-          </button>
+          </Link>
 
-          <button className="rounded-xl border border-slate-300 px-8 py-4 text-lg font-semibold text-slate-950 hover:bg-slate-50">
-            Log in
-          </button>
         </div>
       </div>
     </section>

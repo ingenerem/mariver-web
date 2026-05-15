@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
  const navItems = ["Home", "Features", "Security", "About"];
 
@@ -14,13 +15,15 @@ export default function NavBAr() {
         <nav className="flex items-center justify-between border-b border-slate-200 px-4 py-2">
 
             <div className="flex items-end gap-1">
-                <div className="h-4 w-2 rounded-full bg-blue-500" />
-                <div className="h-6 w-2 rounded-full bg-blue-500" />
-                <div className="h-8 w-2 rounded-full bg-blue-600" />
+                <Link href="/" className="flex w-fit items-center gap-3">
+                        <div className="h-4 w-2 rounded-full bg-blue-500" />
+                        <div className="h-6 w-2 rounded-full bg-blue-500" />
+                        <div className="h-8 w-2 rounded-full bg-blue-600" />
 
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
-                    Mariver
-                </h1>
+                        <h1 className="text-3xl font-semibold tracking-tight text-blue-700">
+                            Mariver
+                        </h1>
+                    </Link>
 
             </div>
             <div className="hidden items-center gap-10  text-base text-slate-700 md:flex">
@@ -45,13 +48,13 @@ export default function NavBAr() {
             </div>
 
             <div className="flex items-center gap-4">
-                <button className="rounded-xl border border-slate-300 px-6 py-3 font-medium text-slate-900">
+                <Link href="/login" className="rounded-xl border border-slate-300 px-6 py-3 font-medium text-slate-900">
                     Log in
-                </button>
+                </Link>
 
-                <button className="rounded-xl bg-blue-600 px-6 py-3 font-medium text-white">
+                <Link href="/register" className="rounded-xl bg-blue-600 px-6 py-3 font-medium text-white">
                     Sign up
-                </button>
+                </Link>
             </div>
 
 
