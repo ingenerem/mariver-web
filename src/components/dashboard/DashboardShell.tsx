@@ -1,20 +1,58 @@
+"use client";
+
+import { useState } from "react";
 import DashboardCard from "./DashboardCard";
 import DashboardHeader from "./DashboardHeader";
 import DashboardSidebar from "./DashboardSidebar";
 
-
-
 export default function DashboardShell() {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     return (
-        <main className="flex min-h-screen bg-slate-50 text-slate-900">
-            <DashboardSidebar />
+        <main className="min-h-screen bg-slate-50 text-slate-900 md:flex">
+
+              <aside className="hidden h-screen w-64 shrink-0 border-r border-slate-200 bg-white md:block">
+                <DashboardSidebar />
+            </aside>
+            {isMobileMenuOpen && (
+                <div className="fixed inset-0 z-50 md:hidden">
+
+                    {/* dark background */}
+                    <div
+                        className="absolute inset-0 bg-black/30 backdrop-blur-[0.5px]"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                    />
+
+                    {/* actual sidebar container */}
+                    <aside className="relative h-full w-64 bg-white shadow-xl">
+
+                        <button
+                            type="button"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="absolute right-4 top-4 text-xl text-slate-600"
+                        >
+                            ×
+                        </button>
+
+                        <DashboardSidebar />
+
+                    </aside>
+
+                </div>
+            )}
+
+          
+
             <div className="flex-1 p-2">
-                <DashboardHeader />
+                <DashboardHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
+
+
                 <div className="mt-4 space-y-6">
 
-                    <section className="grid grid-cols-6 gap-3">
+                    {/* Desktop top cards*/}
 
-                        <DashboardCard title="Current balance">
+                    <section className="hidden gap-6 lg:grid lg:grid-cols-5">
+
+                        <DashboardCard title="Current balance" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-green-500 pt-3">
                                 <p className="text-2xl font-bold">$8,240</p>
 
@@ -24,8 +62,8 @@ export default function DashboardShell() {
                             </div>
                         </DashboardCard>
 
-                        <DashboardCard title="Preset bills">
-                            <div className="mt-3 border-t-4 border-blue-500 pt-3">
+                        <DashboardCard title="Preset bills" className="w-full p-3 justify-self-center p-3">
+                            <div className="mt-3 border-t-4 border-blue-500 pt-3" >
                                 <p className="text-2xl font-bold">$2,140</p>
 
                                 <p className="mt-1 text-xs text-slate-500">
@@ -34,7 +72,7 @@ export default function DashboardShell() {
                             </div>
                         </DashboardCard>
 
-                        <DashboardCard title="Spending money">
+                        <DashboardCard title="Spending money" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-orange-500 pt-3">
                                 <p className="text-2xl font-bold">$1,380</p>
 
@@ -44,9 +82,9 @@ export default function DashboardShell() {
                             </div>
                         </DashboardCard>
 
-                        <DashboardCard title="Emergency fund">
+                        <DashboardCard title="Emergency fund" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-red-500 pt-3">
-                                <p className="text-2xl font-bold">$4,200/6000</p>
+                                <p className="text-xl font-bold">$4,200/6000</p>
 
                                 <p className="mt-1 text-xs text-slate-500">
                                     84% complete
@@ -54,7 +92,7 @@ export default function DashboardShell() {
                             </div>
                         </DashboardCard>
 
-                        <DashboardCard title="Other savings">
+                        <DashboardCard title="Other savings" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-purple-500 pt-3">
                                 <p className="text-2xl font-bold">$1,750</p>
 
@@ -64,17 +102,44 @@ export default function DashboardShell() {
                             </div>
                         </DashboardCard>
 
-                        <DashboardCard title="Investments">
-                            <div className="mt-3 border-t-4 border-purple-500 pt-3">
-                                <p className="text-2xl font-bold">$1000</p>
 
-                                <p className="mt-1 text-xs text-slate-500">
-                                    stocks
+                    </section>
+
+                    {/*Mobile view top cards */}
+
+                    <section className="grid grid-cols-3 gap-4 mx-auto max-w-[1500px] lg:hidden">
+                        <DashboardCard title="Current balance" className="max-w-[250px] p-3">
+                            <div className="mt-3 border-t-4 border-orange-500 pt-3">
+                                <p className="text-2xl font-bold">$8,240</p>
+
+                                <p className="mt-1 text-xs text-green-600">
+                                    +12% this period
                                 </p>
                             </div>
                         </DashboardCard>
 
+                        <DashboardCard title="Preset bills" className="max-w-[1500px] p-3">
+                            <div className="mt-3 border-t-4 border-blue-500 pt-3">
+                                <p className="text-2xl font-bold">$2,140</p>
+
+                                <p className="mt-1 text-xs text-slate-500">
+                                    Reserved
+                                </p>
+                            </div>
+                        </DashboardCard>
+
+                        <DashboardCard title="Spending money" className="max-w-[1500px] justify-self-center p-3">
+                            <div className="mt-3 border-t-4 border-orange-500 pt-3">
+                                <p className="text-2xl font-bold">$1,380</p>
+
+                                <p className="mt-1 text-xs text-slate-500">
+                                    Available now
+                                </p>
+                            </div>
+                        </DashboardCard>
                     </section>
+
+
                     <section>
                         <div className="grid grid-cols-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
@@ -107,8 +172,34 @@ export default function DashboardShell() {
                     </section>
 
 
+                    {/*Mobile view bottom cards */}
+
+                    <section className="grid grid-cols-2 gap-4 lg:hidden">
+
+                        <DashboardCard title="Emergency fund" className="w-full p-3 justify-self-center p-3">
+                            <div className="mt-3 border-t-4 border-red-500 pt-3">
+                                <p className="text-2xl font-bold">$4,200/6000</p>
+
+                                <p className="mt-1 text-xs text-slate-500">
+                                    84% complete
+                                </p>
+                            </div>
+                        </DashboardCard>
+
+                        <DashboardCard title="Other savings" className="w-full p-3 justify-self-center p-3">
+                            <div className="mt-3 border-t-4 border-purple-500 pt-3">
+                                <p className="text-2xl font-bold">$1,750</p>
+
+                                <p className="mt-1 text-xs text-slate-500">
+                                    3 active goals
+                                </p>
+                            </div>
+                        </DashboardCard>
+                    </section>
+
+
                     <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-                        <DashboardCard title="Paid bills">
+                        <DashboardCard title="Paid bills" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-4 space-y-4 text-sm">
                                 <div className="flex items-center justify-between">
                                     <div>
@@ -134,7 +225,7 @@ export default function DashboardShell() {
                             </div>
                         </DashboardCard>
 
-                        <DashboardCard title="Recent spending">
+                        <DashboardCard title="Recent spending" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-4 space-y-3 text-sm">
                                 <div className="flex items-center justify-between">
                                     <span className="text-slate-600">Groceries</span>
@@ -153,7 +244,7 @@ export default function DashboardShell() {
                             </div>
                         </DashboardCard>
 
-                        <DashboardCard title="Upcoming bills">
+                        <DashboardCard title="Upcoming bills" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-4 space-y-3 text-sm">
                                 <div className="flex items-center justify-between">
                                     <span className="text-slate-600">Rent</span>
@@ -174,9 +265,9 @@ export default function DashboardShell() {
 
 
                     </section>
-                    <section className="grid grid-cols-3 gap-3">
+                    <section className="grid grid-cols-1 gap-3 xl:grid-cols-3">
 
-                        <DashboardCard title="Income period">
+                        <DashboardCard title="Income period" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3">
                                 <p className="text-xl font-bold">
                                     May 15 – May 30
@@ -188,7 +279,7 @@ export default function DashboardShell() {
                             </div>
                         </DashboardCard>
 
-                        <DashboardCard title="Projected income">
+                        <DashboardCard title="Projected income" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-green-500 pt-3">
                                 <p className="text-2xl font-bold">
                                     $5,000
@@ -200,7 +291,7 @@ export default function DashboardShell() {
                             </div>
                         </DashboardCard>
 
-                        <DashboardCard title="Future goals">
+                        <DashboardCard title="Future goals" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-purple-500 pt-3">
                                 <p className="text-2xl font-bold">
                                     $4,000
