@@ -1,16 +1,63 @@
 "use client";
 
-import { useState } from "react";
-import DashboardCard from "./DashboardCard";
-import DashboardHeader from "./DashboardHeader";
-import DashboardSidebar from "./DashboardSidebar";
+import { useEffect, useState } from "react";
+import DashboardCard from "@/components/dashboard/DashboardCard";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import StartingBalanceModal from "@/components/dashboard/StartingBalanceModal"
+import PresetBillsModal from "@/components/dashboard/PresetBillsModal";
+import { formatPayPeriod, getCurrentPayPeriod } from "@/utils/payPeriod";
 
 export default function DashboardShell() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // Stores the user's starting/current balance.
+    // null means the user has not entered a balance yet.
+    const [startingBalance, setStartingBalance] = useState<number | null>(null);
+
+    // Controls whether the starting balance modal is open or closed.
+    const [isStartingBalanceModalOpen, setIsStartingBalanceModalOpen] =
+        useState(false);
+
+    // Controls whether the preset bills modal is open or closed.
+    const [isPresetBillsModalOpen, setIsPresetBillsModalOpen] = useState(false);
+
+    // Loads saved balance from the browser when the dashboard first opens.
+    useEffect(() => {
+        const savedBalance = localStorage.getItem("mariver_starting_balance");
+
+        if (savedBalance !== null) {
+            setStartingBalance(Number(savedBalance));
+        }
+    }, []);
+
+    useEffect(() => {
+        const savedBalance = localStorage.getItem("mariver_starting_balance");
+
+        if (savedBalance === null) {
+            setIsStartingBalanceModalOpen(true);
+        }
+    }, []);
+
+
+    // Temporary default.
+    // Later this will come from the user's income setup.
+    const payFrequency = "semi-monthly";
+
+    const currentPayPeriod = getCurrentPayPeriod(
+        new Date(),
+        payFrequency
+    );
+
+    const incomePeriodText = formatPayPeriod(
+        currentPayPeriod.start,
+        currentPayPeriod.end
+    );
+
     return (
         <main className="min-h-screen bg-slate-50 text-slate-900 md:flex">
 
-              <aside className="hidden h-screen w-64 shrink-0 border-r border-slate-200 bg-white md:block">
+            <aside className="hidden h-screen w-64 shrink-0 border-r border-slate-200 bg-white md:block">
                 <DashboardSidebar />
             </aside>
             {isMobileMenuOpen && (
@@ -40,7 +87,7 @@ export default function DashboardShell() {
                 </div>
             )}
 
-          
+
 
             <div className="flex-1 p-2">
                 <DashboardHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
@@ -52,19 +99,54 @@ export default function DashboardShell() {
 
                     <section className="hidden gap-6 lg:grid lg:grid-cols-5">
 
-                        <DashboardCard title="Current balance" className="w-full p-3 justify-self-center p-3">
-                            <div className="mt-3 border-t-4 border-green-500 pt-3">
-                                <p className="text-2xl font-bold">$8,240</p>
+                        <DashboardCard title="Current balance" className="w-full justify-self-center p-3">
 
-                                <p className="mt-1 text-xs text-green-600">
-                                    +12% this period
-                                </p>
-                            </div>
+                            <button
+                                type="button"
+
+                                // Opens modal when card is clicked.
+                                onClick={() => setIsStartingBalanceModalOpen(true)}
+
+                                className="w-full text-left"
+                            >
+                                <div className="mt-3 border-t-4 border-green-500 pt-3">
+                                    {startingBalance === null ? (
+                                        <>
+                                            <p className="text-xl font-bold">Not set</p>
+
+                                            <p
+
+
+                                                // Opens the modal when clicked.
+                                                onClick={() => setIsStartingBalanceModalOpen(true)}
+
+                                                className="mt-1 text-xs font-medium text-blue-600 hover:underline"
+                                            >
+                                                Set starting balance
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="text-2xl font-bold">
+                                                ${startingBalance}
+                                            </p>
+
+                                            <p className="mt-1 text-xs text-green-600">
+                                                Current active balance
+                                            </p>
+                                            <p className="text-xs font-medium text-slate-500">
+                                                Edit
+                                            </p>
+                                        </>
+                                    )}
+
+                                </div>
+                            </button>
                         </DashboardCard>
 
                         <DashboardCard title="Preset bills" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-blue-500 pt-3" >
-                                <p className="text-2xl font-bold">$2,140</p>
+                                <p className="text-2xl font-bold">$0</p>
 
                                 <p className="mt-1 text-xs text-slate-500">
                                     Reserved
@@ -74,7 +156,7 @@ export default function DashboardShell() {
 
                         <DashboardCard title="Spending money" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-orange-500 pt-3">
-                                <p className="text-2xl font-bold">$1,380</p>
+                                <p className="text-2xl font-bold">$0</p>
 
                                 <p className="mt-1 text-xs text-slate-500">
                                     Available now
@@ -84,7 +166,7 @@ export default function DashboardShell() {
 
                         <DashboardCard title="Emergency fund" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-red-500 pt-3">
-                                <p className="text-xl font-bold">$4,200/6000</p>
+                                <p className="text-xl font-bold">$0/0</p>
 
                                 <p className="mt-1 text-xs text-slate-500">
                                     84% complete
@@ -94,7 +176,7 @@ export default function DashboardShell() {
 
                         <DashboardCard title="Other savings" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-purple-500 pt-3">
-                                <p className="text-2xl font-bold">$1,750</p>
+                                <p className="text-2xl font-bold">$0</p>
 
                                 <p className="mt-1 text-xs text-slate-500">
                                     3 active goals
@@ -109,18 +191,52 @@ export default function DashboardShell() {
 
                     <section className="grid grid-cols-3 gap-4 mx-auto max-w-[1500px] lg:hidden">
                         <DashboardCard title="Current balance" className="max-w-[250px] p-3">
-                            <div className="mt-3 border-t-4 border-orange-500 pt-3">
-                                <p className="text-2xl font-bold">$8,240</p>
+                            <button
+                                type="button"
 
-                                <p className="mt-1 text-xs text-green-600">
-                                    +12% this period
-                                </p>
-                            </div>
+                                // Opens modal when card is clicked.
+                                onClick={() => setIsStartingBalanceModalOpen(true)}
+
+                                className="w-full text-left"
+                            >
+                                <div className="mt-3 border-t-4 border-green-500 pt-3">
+                                    {startingBalance === null ? (
+                                        <>
+                                            <p className="text-xl font-bold">Not set</p>
+
+                                            <p
+
+
+                                                // Opens the modal when clicked.
+                                                onClick={() => setIsStartingBalanceModalOpen(true)}
+
+                                                className="mt-1 text-xs font-medium text-blue-600 hover:underline"
+                                            >
+                                                Set starting balance
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="text-2xl font-bold">
+                                                ${startingBalance}
+                                            </p>
+
+                                            <p className="mt-1 text-xs text-green-600">
+                                                Current active balance
+                                            </p>
+                                            <p className="text-xs font-medium text-slate-500">
+                                                Edit
+                                            </p>
+                                        </>
+                                    )}
+
+                                </div>
+                            </button>
                         </DashboardCard>
 
                         <DashboardCard title="Preset bills" className="max-w-[1500px] p-3">
                             <div className="mt-3 border-t-4 border-blue-500 pt-3">
-                                <p className="text-2xl font-bold">$2,140</p>
+                                <p className="text-2xl font-bold">$0</p>
 
                                 <p className="mt-1 text-xs text-slate-500">
                                     Reserved
@@ -130,7 +246,7 @@ export default function DashboardShell() {
 
                         <DashboardCard title="Spending money" className="max-w-[1500px] justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-orange-500 pt-3">
-                                <p className="text-2xl font-bold">$1,380</p>
+                                <p className="text-2xl font-bold">$0</p>
 
                                 <p className="mt-1 text-xs text-slate-500">
                                     Available now
@@ -148,9 +264,10 @@ export default function DashboardShell() {
                                 <span className="font-medium">Add income</span>
                             </button>
 
-                            <button className="flex items-center justify-center gap-3 border-l border-slate-200 p-5 transition hover:bg-slate-50">
+                            <button onClick={() => setIsPresetBillsModalOpen(true)}
+                                className="flex items-center justify-center gap-3 border-l border-slate-200 p-5 transition hover:bg-slate-50">
                                 <span className="text-xl text-blue-500">+</span>
-                                <span className="font-medium">Add bill</span>
+                                <span className="font-medium">Manage bills</span>
                             </button>
 
                             <button className="flex items-center justify-center gap-3 border-l border-slate-200 p-5 transition hover:bg-slate-50">
@@ -178,7 +295,7 @@ export default function DashboardShell() {
 
                         <DashboardCard title="Emergency fund" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-red-500 pt-3">
-                                <p className="text-2xl font-bold">$4,200/6000</p>
+                                <p className="text-2xl font-bold">$0/0</p>
 
                                 <p className="mt-1 text-xs text-slate-500">
                                     84% complete
@@ -188,7 +305,7 @@ export default function DashboardShell() {
 
                         <DashboardCard title="Other savings" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-purple-500 pt-3">
-                                <p className="text-2xl font-bold">$1,750</p>
+                                <p className="text-2xl font-bold">$0</p>
 
                                 <p className="mt-1 text-xs text-slate-500">
                                     3 active goals
@@ -270,7 +387,7 @@ export default function DashboardShell() {
                         <DashboardCard title="Income period" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3">
                                 <p className="text-xl font-bold">
-                                    May 15 – May 30
+                                    {incomePeriodText}
                                 </p>
 
                                 <p className="mt-1 text-xs text-slate-500">
@@ -282,7 +399,7 @@ export default function DashboardShell() {
                         <DashboardCard title="Projected income" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-green-500 pt-3">
                                 <p className="text-2xl font-bold">
-                                    $5,000
+                                    $0
                                 </p>
 
                                 <p className="mt-1 text-xs text-slate-500">
@@ -294,7 +411,7 @@ export default function DashboardShell() {
                         <DashboardCard title="Future goals" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-purple-500 pt-3">
                                 <p className="text-2xl font-bold">
-                                    $4,000
+                                    $0
                                 </p>
 
                                 <p className="mt-1 text-xs text-slate-500">
@@ -307,6 +424,26 @@ export default function DashboardShell() {
 
                 </div>
             </div>
+
+            {isStartingBalanceModalOpen && (
+                <StartingBalanceModal
+                    onClose={() => setIsStartingBalanceModalOpen(false)}
+
+                    // Receives the amount from the modal
+                    // and updates the dashboard state.
+                    onSave={(amount) => setStartingBalance(amount)}
+                />
+            )}
+
+            {isPresetBillsModalOpen && (
+                <PresetBillsModal
+                    onClose={() => setIsPresetBillsModalOpen(false)}
+                />
+            )}
         </main>
+
+
+
+
     );
 }

@@ -1,9 +1,14 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
-
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function LoginForm() {
+    const [errorMessage, setErrorMessage] = useState("");
+    const router = useRouter();
     return (
         <section className="w-full max-w-xl rounded-3xl bg-white p-2 my-2 shadow-lg">
 
@@ -47,14 +52,15 @@ export default function LoginForm() {
                 <div className="h-px flex-1 bg-slate-200" />
             </div>
 
-            <form className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-3">
 
 
                 <div>
                     <label className="mb-2 block text-xs font-medium text-slate-700">
-                        Email address
+                        Email address <span className="text-red-500">*</span>
                     </label>
                     <input
+                        name="email"
                         type="email"
                         placeholder="Enter your email"
                         className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
@@ -63,15 +69,21 @@ export default function LoginForm() {
 
                 <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Password
+                        Password <span className="text-red-500">*</span>
                     </label>
                     <input
+                        name="password"
                         type="password"
-                        placeholder="Create a password"
+                        placeholder="Enter password"
                         className="w-full rounded-xl border border-slate-300 px-4 py-2 outline-none focus:border-blue-600"
                     />
                 </div>
 
+                {errorMessage && (
+                    <p className="rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-600">
+                        {errorMessage}
+                    </p>
+                )}
                 <button
                     type="submit"
                     className="w-full rounded-xl bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700"
@@ -83,4 +95,49 @@ export default function LoginForm() {
 
         </section>
     );
+
+    async function handleSubmit(event: any) {
+        event.preventDefault();
+
+        const formData = new FormData(event.currentTarget);
+
+        const email = formData.get("email");
+        const password = formData.get("password");
+
+        if (!email || !password) {
+            setErrorMessage("Please fill all required fields.");
+            return;
+        }
+
+
+        const response = await fetch("http://localhost:8080/api/auth/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                email,
+                password,
+            }),
+        });
+
+        if (!response.ok) {
+            setErrorMessage("Invalid email or password.");
+            return;
+        }
+        const result = await response.json();
+        localStorage.setItem("mariver_token", result.token);
+
+        localStorage.setItem(
+            "mariver_user",
+            JSON.stringify({
+                displayName: result.displayName,
+                email: result.email,
+            })
+        );
+
+        router.push("/dashboard");
+
+    }
+
 }
