@@ -7,3 +7,23 @@ export function formatDate(date: Date) {
     year: "numeric",
   }).format(date);
 }
+
+
+export function formatDueDate(
+  dueDay: number,
+): string {
+
+
+  const today = new Date();
+
+  const date = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    dueDay
+  );
+
+  return `${date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  })}`;
+}
