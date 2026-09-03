@@ -9,17 +9,31 @@ import BillsModal from "@/components/bills/BillsModal";
 import { getUpcomingBills, payBill, getPaidBills, getOverdueBills } from "@/lib/billApi";
 import { formatDueDate } from "@/utils/dateFormat";
 import { BillResponse } from "@/types/bill";
-
+import getDashboardStats from "@/lib/dashboardApi"
 
 export default function DashboardShell() {
 
-    const currentMonth = new Date().toLocaleString("default", {month: "long",});
+    const currentMonth = new Date().toLocaleString("default", { month: "long", });
+
+    type DashboardStats = {
+        currentBalance: number;
+        protectedBills: number;
+        emergencyFund: number,
+        spendableAmount: number;
+        otherSavings: number;
+    };
+
+    const [stats, setDashBoardStats] = useState<DashboardStats>({
+        currentBalance: 0,
+        protectedBills: 0,
+        spendableAmount: 0,
+        emergencyFund: 0,
+        otherSavings: 0,
+    });
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // Stores the user's starting/current balance.
-    // null means the user has not entered a balance yet.
-    const [startingBalance, setStartingBalance] = useState<number | null>(null);
+
 
     // Controls whether the starting balance modal is open or closed.
     const [isStartingBalanceModalOpen, setIsStartingBalanceModalOpen] =
@@ -37,23 +51,23 @@ export default function DashboardShell() {
     const [isLoadingBills, setIsLoadingBills] = useState(false);
 
 
-    const handleMarkAsPaid = async(billId: number) => {
+    const handleMarkAsPaid = async (billId: number) => {
 
-         try {
+        try {
             // Used for the to show the user when the bills are still loading
 
             await payBill(billId);
             await Promise.all([
-                loadBills(),
-                loadPaidBills(),
-                loadOverDueBills()
+                await loadDashboard()
 
-        ]);
-            
-            
+
+
+            ]);
+
+
         } catch (error) {
             console.error("Failed to pay bill:", error);
-        } 
+        }
     };
 
     // Loads saved balance from the browser when the dashboard first opens.
@@ -62,18 +76,10 @@ export default function DashboardShell() {
             try {
                 setIsLoadingAccount(true);
 
-                const response = await fetch("http://localhost:8080/api/accounts/me", {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
-                    },
-                });
 
-                if (!response.ok) {
-                    throw new Error("Failed to load account");
-                }
 
-                const account = await response.json();
-                setStartingBalance(account.currentBalance);
+                const dashboardData = await getDashboardStats()
+                setDashBoardStats(dashboardData)
             } catch (error) {
                 console.error(error);
             } finally {
@@ -102,45 +108,37 @@ export default function DashboardShell() {
     };
 
 
-        //Call the api to retrieve paid bills and load them into state
-    const loadPaidBills = async () => {
+    const loadDashboard = async () => {
         try {
-            // Used for the to show the user when the bills are still loading
-            setIsLoadingBills(true);
+            const [
+                upcoming,
+                overdue,
+                paid,
+                stats
 
-            const data = await getPaidBills();
-            console.log(data);
-            setPaidBills(data);
+            ] = await Promise.all([
+                getUpcomingBills(),
+                getOverdueBills(),
+                getPaidBills(),
+                getDashboardStats(),
+
+            ]);
+
+            setBills(upcoming);
+            setOverDueBills(overdue);
+            setPaidBills(paid);
+            setDashBoardStats(stats);
+
+
         } catch (error) {
-            console.error("Failed to load bills:", error);
-        } finally {
-            setIsLoadingBills(false);
+            console.error("Failed to load dashboard:", error);
         }
     };
-
-            //Call the api to retrieve unpaid bills and load them into state
-    const loadOverDueBills = async () => {
-        try {
-            // Used for the to show the user when the bills are still loading
-            setIsLoadingBills(true);
-
-            const data = await getOverdueBills();
-            console.log(data);
-            setOverDueBills(data);
-        } catch (error) {
-            console.error("Failed to load bills:", error);
-        } finally {
-            setIsLoadingBills(false);
-        }
-    };
-
 
 
 
     useEffect(() => {
-        loadBills();
-        loadPaidBills();
-        loadOverDueBills();
+        loadDashboard()
     }, []);
 
 
@@ -209,7 +207,7 @@ export default function DashboardShell() {
                                         <>
                                             <p className="text-xl font-bold">Loading...</p>
                                         </>
-                                    ) : startingBalance === null ? (
+                                    ) : stats.currentBalance === null ? (
                                         <>
                                             <p className="text-xl font-bold">Not set</p>
 
@@ -223,7 +221,7 @@ export default function DashboardShell() {
                                     ) : (
                                         <>
                                             <p className="text-2xl font-bold">
-                                                ${startingBalance.toFixed(2)}
+                                                ${stats.currentBalance}
                                             </p>
 
                                             <p className="mt-1 text-xs text-green-600">
@@ -241,41 +239,108 @@ export default function DashboardShell() {
 
                         <DashboardCard title="Total unpaid bills" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-blue-500 pt-3" >
-                                <p className="text-2xl font-bold text-red-700">$0</p>
 
-                                <p className="mt-1 text-xs text-slate-500">
-                                    Reserved
-                                </p>
+                                {isLoadingAccount ? (
+                                    <>
+                                        <p className="text-xl font-bold">Loading...</p>
+                                    </>
+                                ) : stats.protectedBills === null ? (
+                                    <>
+                                        <p className="text-xl font-bold">Not bills found</p>
+
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-2xl font-bold">
+                                            ${stats.protectedBills}
+                                        </p>
+
+                                        <p className="mt-1 text-xs text-red-600">
+                                            Total unpaid bills
+                                        </p>
+
+                                    </>
+                                )}
+
                             </div>
                         </DashboardCard>
 
-                        <DashboardCard title="Spending money" className="w-full p-3 justify-self-center p-3">
+                        <DashboardCard title="Spendable money" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-orange-500 pt-3">
-                                <p className="text-2xl font-bold">$0</p>
+                                {isLoadingAccount ? (
+                                    <>
+                                        <p className="text-xl font-bold">Loading...</p>
+                                    </>
+                                ) : stats.spendableAmount === null ? (
+                                    <>
+                                        <p className="text-xl font-bold">$0</p>
 
-                                <p className="mt-1 text-xs text-slate-500">
-                                    Available now
-                                </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-2xl font-bold">
+                                            ${stats.spendableAmount}
+                                        </p>
+
+                                        <p className="mt-1 text-xs text-green-600">
+                                            Available now
+                                        </p>
+
+                                    </>
+                                )}
+
                             </div>
                         </DashboardCard>
 
                         <DashboardCard title="Emergency fund" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-red-500 pt-3">
-                                <p className="text-xl font-bold">$0/0</p>
+                                {isLoadingAccount ? (
+                                    <>
+                                        <p className="text-xl font-bold">Loading...</p>
+                                    </>
+                                ) : stats.emergencyFund === null ? (
+                                    <>
+                                        <p className="text-xl font-bold">$0</p>
 
-                                <p className="mt-1 text-xs text-slate-500">
-                                    84% complete
-                                </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-2xl font-bold">
+                                            ${stats.emergencyFund}
+                                        </p>
+
+                                        <p className="mt-1 text-xs text-green-600">
+                                            Allocated fund
+                                        </p>
+
+                                    </>
+                                )}
                             </div>
                         </DashboardCard>
 
                         <DashboardCard title="Other savings" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-purple-500 pt-3">
-                                <p className="text-2xl font-bold">$0</p>
+                                {isLoadingAccount ? (
+                                    <>
+                                        <p className="text-xl font-bold">Loading...</p>
+                                    </>
+                                ) : stats.otherSavings === null ? (
+                                    <>
+                                        <p className="text-xl font-bold">$0</p>
 
-                                <p className="mt-1 text-xs text-slate-500">
-                                    3 active goals
-                                </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-2xl font-bold">
+                                            ${stats.otherSavings}
+                                        </p>
+
+                                        <p className="mt-1 text-xs text-green-600">
+                                            Allocated fund
+                                        </p>
+
+                                    </>
+                                )}
                             </div>
                         </DashboardCard>
 
@@ -295,7 +360,7 @@ export default function DashboardShell() {
                                 className="w-full text-left"
                             >
                                 <div className="mt-3 border-t-4 border-green-500 pt-3">
-                                    {startingBalance === null ? (
+                                    {stats.currentBalance === null ? (
                                         <>
                                             <p className="text-xl font-bold">Not set</p>
 
@@ -313,7 +378,7 @@ export default function DashboardShell() {
                                     ) : (
                                         <>
                                             <p className="text-2xl font-bold">
-                                                ${startingBalance}
+                                                ${stats.currentBalance}
                                             </p>
 
                                             <p className="mt-1 text-xs text-green-600">
@@ -329,23 +394,55 @@ export default function DashboardShell() {
                             </button>
                         </DashboardCard>
 
-                        <DashboardCard title="Total unpaid bills"  className="max-w-[1500px] p-3">
+                        <DashboardCard title="Total unpaid bills" className="max-w-[1500px] p-3">
                             <div className="mt-3 border-t-4 border-blue-500 pt-3">
-                                <p className="text-2xl font-bold text-red-700">$0</p>
+                                {isLoadingAccount ? (
+                                    <>
+                                        <p className="text-xl font-bold">Loading...</p>
+                                    </>
+                                ) : stats.protectedBills === null ? (
+                                    <>
+                                        <p className="text-xl font-bold">Not bills found</p>
 
-                                <p className="mt-1 text-xs text-slate-500">
-                                    Reserved
-                                </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-2xl font-bold">
+                                            ${stats.protectedBills}
+                                        </p>
+
+                                        <p className="mt-1 text-xs text-red-600">
+                                            Total unpaid bills
+                                        </p>
+
+                                    </>
+                                )}
                             </div>
                         </DashboardCard>
 
-                        <DashboardCard title="Spending money" className="max-w-[1500px] justify-self-center p-3">
+                        <DashboardCard title="Spendable money" className="max-w-[1500px] justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-orange-500 pt-3">
-                                <p className="text-2xl font-bold">$0</p>
+                                {isLoadingAccount ? (
+                                    <>
+                                        <p className="text-xl font-bold">Loading...</p>
+                                    </>
+                                ) : stats.spendableAmount === null ? (
+                                    <>
+                                        <p className="text-xl font-bold">$0</p>
 
-                                <p className="mt-1 text-xs text-slate-500">
-                                    Available now
-                                </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-2xl font-bold">
+                                            ${stats.spendableAmount}
+                                        </p>
+
+                                        <p className="mt-1 text-xs text-green-600">
+                                            Available now
+                                        </p>
+
+                                    </>
+                                )}
                             </div>
                         </DashboardCard>
                     </section>
@@ -390,21 +487,53 @@ export default function DashboardShell() {
 
                         <DashboardCard title="Emergency fund" tittle_color="text-slate-800" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-red-500 pt-3">
-                                <p className="text-2xl font-bold">$0/0</p>
+                                {isLoadingAccount ? (
+                                    <>
+                                        <p className="text-xl font-bold">Loading...</p>
+                                    </>
+                                ) : stats.emergencyFund === null ? (
+                                    <>
+                                        <p className="text-xl font-bold">$0</p>
 
-                                <p className="mt-1 text-xs text-slate-500">
-                                    84% complete
-                                </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-2xl font-bold">
+                                            ${stats.emergencyFund}
+                                        </p>
+
+                                        <p className="mt-1 text-xs text-green-600">
+                                            Allocated fund
+                                        </p>
+
+                                    </>
+                                )}
                             </div>
                         </DashboardCard>
 
                         <DashboardCard title="Other savings" tittle_color="text-slate-800" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 border-t-4 border-purple-500 pt-3">
-                                <p className="text-2xl font-bold">$0</p>
+                                {isLoadingAccount ? (
+                                    <>
+                                        <p className="text-xl font-bold">Loading...</p>
+                                    </>
+                                ) : stats.otherSavings === null ? (
+                                    <>
+                                        <p className="text-xl font-bold">$0</p>
 
-                                <p className="mt-1 text-xs text-slate-500">
-                                    3 active goals
-                                </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-2xl font-bold">
+                                            ${stats.otherSavings}
+                                        </p>
+
+                                        <p className="mt-1 text-xs text-green-600">
+                                            Allocated fund
+                                        </p>
+
+                                    </>
+                                )}
                             </div>
                         </DashboardCard>
                     </section>
@@ -413,7 +542,7 @@ export default function DashboardShell() {
                     <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
                         <DashboardCard title="Paid bills" tittle_color="text-green-700" subtitle={`(${currentMonth})`} className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1 text-sm">
-                                   {isLoadingBills ? (
+                                {isLoadingBills ? (
                                     <p className="text-sm text-slate-500">Loading bills...</p>
                                 ) : paidBills.length === 0 ? (
                                     <p className="text-sm text-slate-500">No bills found for this month.</p>
@@ -432,7 +561,7 @@ export default function DashboardShell() {
                                                     </p>
 
                                                     <p className="text-xs text-slate-500">
-                                                        {bill.category} • Paid at {bill.paidAt &&  new Date(bill.paidAt).toLocaleString()}
+                                                        {bill.category} • Paid at {bill.paidAt && new Date(bill.paidAt).toLocaleString()}
                                                     </p>
                                                 </div>
 
@@ -441,7 +570,7 @@ export default function DashboardShell() {
                                                         ${bill.actualAmount.toFixed(2)}
                                                     </p>
 
-                                                  
+
                                                 </div>
 
                                             </div>
@@ -473,7 +602,7 @@ export default function DashboardShell() {
                                                     </p>
 
                                                     <p className="text-xs text-slate-500">
-                                                        {bill.category} • Due {formatDueDate(bill.dueDay)}
+                                                        {bill.category} • Due {formatDueDate(bill.dueDay, bill.recordMonth, bill.recordYear)}
                                                     </p>
                                                 </div>
 
@@ -502,7 +631,7 @@ export default function DashboardShell() {
 
                         <DashboardCard title="Over due bills" tittle_color="text-red-700" className="w-full p-3 justify-self-center p-3">
                             <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1 text-sm">
-                               {isLoadingBills ? (
+                                {isLoadingBills ? (
                                     <p className="text-sm text-slate-500">Loading bills...</p>
                                 ) : overDueBills.length === 0 ? (
                                     <p className="text-sm text-slate-500">No unpaid bills found for this month.</p>
@@ -521,7 +650,7 @@ export default function DashboardShell() {
                                                     </p>
 
                                                     <p className="text-xs text-slate-500">
-                                                        {bill.category} • Due {formatDueDate(bill.dueDay)}
+                                                        {bill.category} • Due {formatDueDate(bill.dueDay, bill.recordMonth, bill.recordYear)}
                                                     </p>
                                                 </div>
 
@@ -608,8 +737,9 @@ export default function DashboardShell() {
 
                         const updatedAccount = await response.json();
 
-                        setStartingBalance(updatedAccount.currentBalance);
+
                         setIsStartingBalanceModalOpen(false);
+                        loadDashboard();
                     }}
                 />
             )}

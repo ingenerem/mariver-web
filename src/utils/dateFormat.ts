@@ -11,19 +11,18 @@ export function formatDate(date: Date) {
 
 export function formatDueDate(
   dueDay: number,
+  recordMonth: number,
+  recordYear: number,
 ): string {
 
 
   const today = new Date();
 
-  const date = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    dueDay
-  );
+  const date = new Date(recordYear, recordMonth - 1, dueDay);
 
   return `${date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
+    year: "numeric",
   })}`;
 }

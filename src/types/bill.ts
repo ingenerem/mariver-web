@@ -15,5 +15,7 @@ export type BillResponse = {
   category: string;
   actualAmount: number;
   dueDay: number;
+  recordMonth: number,
+  recordYear: number,
   paidAt: string | null;
 }
