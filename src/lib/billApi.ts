@@ -1,9 +1,10 @@
-import type { Bill } from "@/types/bill";
+
+import type { BillRequest } from "@/types/bill";
 
 const API_BASE_URL = "http://localhost:8080";
 
 
-function mapBillRequest(bill: Bill) {
+function mapBillRequest(bill: BillRequest) {
   return {
     name: bill.name,
     amount: bill.amount,
@@ -17,7 +18,7 @@ function mapBillRequest(bill: Bill) {
 }
 
 
-export async function createBill(bill: Bill) {
+export async function createBill(bill: BillRequest) {
   const response = await fetch(`${API_BASE_URL}/api/bills`, {
     method: "POST",
     headers: {
@@ -35,7 +36,7 @@ export async function createBill(bill: Bill) {
   return response.json();
 }
 
-export async function createBills(bills: Bill[]) {
+export async function createBills(bills: BillRequest[]) {
   const response = await fetch(`${API_BASE_URL}/api/bills/batch`, {
     method: "POST",
     headers: {

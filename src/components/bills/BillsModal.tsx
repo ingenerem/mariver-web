@@ -172,6 +172,7 @@ export default function BillsModal({
                 <option value="">Select category</option>
                 <option value="HOUSING">Housing</option>
                 <option value="UTILITIES">Utilities</option>
+                <option value="FOOD">Food</option>
                 <option value="INSURANCE">Insurance</option>
                 <option value="SUBSCRIPTION">Subscription</option>
                 <option value="TRANSPORTATION">Transportation</option>
@@ -234,9 +235,9 @@ export default function BillsModal({
               <button onClick={handleAddBill}
                 type="button"
                 disabled={isSavingBills}
-                className={`{w-full rounded-xl bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 ${isSavingBills
+                className={`{w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 ${isSavingBills
                   ? "cursor-not-allowed opacity-50"
-                  : "text-slate-400 hover:text-slate-700"
+                  : "text-slate-400 hover:text-white"
                   }`}
               >
                 Add bill
@@ -335,9 +336,9 @@ export default function BillsModal({
             type="button"
             onClick={handleSaveBills}
             disabled={isSavingBills || bills.length === 0}
-            className={`rounded-xl bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700     ${isSavingBills
+            className={`rounded-xl bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700     ${isSavingBills
               ? "cursor-not-allowed opacity-50"
-              : "text-slate-400 hover:text-slate-700"
+              : "text-slate-400 hover:text-white"
               }`}
           >
             {isSavingBills ? "Saving..." : "Save bills"}
@@ -393,7 +394,7 @@ export default function BillsModal({
 
   async function handleSaveBills() {
     try {
-      setIsSavingBills(true);
+      setIsSavingBills(true); 
       setSaveError("");
 
 
@@ -401,7 +402,7 @@ export default function BillsModal({
       setIsSavingBills(true);
 
 
-          const response = await createBills(bills);
+    const response = await createBills(bills);
 
     console.log("createBills response:", response);
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import MariverLogo from "./MariverLogo";
 
-const navItems = ["Home", "Features", "Security", "About"];
+const navItems = ["Home"];
 
 export default function NavBAr() {
 
