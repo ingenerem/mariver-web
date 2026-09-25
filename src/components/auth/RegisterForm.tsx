@@ -133,7 +133,6 @@ export default function RegisterForm() {
 
         if (!displayName || !email || !password || !confirmPassword) {
             setErrorMessage("Please fill all required fields.");
-            console.log(displayName, email, password, confirmPassword)
             return;
         }
 
@@ -164,7 +163,7 @@ export default function RegisterForm() {
                 email: result.email,
             })
         );
-        console.log("Registered and saved:", result);
+        
         router.push("/dashboard");
     }
 }
