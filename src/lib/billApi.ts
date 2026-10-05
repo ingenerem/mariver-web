@@ -1,7 +1,7 @@
 
 import type { BillRequest } from "@/types/bill";
 
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
 function mapBillRequest(bill: BillRequest) {

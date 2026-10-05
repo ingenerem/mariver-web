@@ -922,7 +922,7 @@ export default function DashboardShell() {
                     // Receives the amount from the modal
                     // and updates the dashboard state.
                     onSave={async (amount) => {
-                        const response = await fetch("http://localhost:8080/api/accounts/me", {
+                        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/me`, {
                             method: "PATCH",
                             headers: {
                                 "Content-Type": "application/json",

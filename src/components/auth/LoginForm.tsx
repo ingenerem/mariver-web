@@ -99,6 +99,7 @@ export default function LoginForm() {
     async function handleSubmit(event: any) {
         event.preventDefault();
 
+        console.log("LOGIN HANDLER RUNNING");
         const formData = new FormData(event.currentTarget);
 
         const email = formData.get("email");
@@ -110,7 +111,7 @@ export default function LoginForm() {
         }
 
 
-        const response = await fetch("http://localhost:8080/api/auth/login", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

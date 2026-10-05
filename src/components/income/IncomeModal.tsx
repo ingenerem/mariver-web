@@ -49,6 +49,9 @@ export default function IncomeModal({
   const [isSavingIncomes, setIsSavingIncomes] = useState(false);
   const [saveError, setSaveError] = useState("");
 
+  const createTempId = () =>
+    `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
 
   const INCOME_CATEGORIES = [
   "Paycheck",
@@ -342,7 +345,7 @@ export default function IncomeModal({
     
         const transactionType: TransactionType = "INCOME";
         const newIncome: TempTransaction = {
-           id: crypto.randomUUID(),
+           id: createTempId(),
           amount,
           type: transactionType,
           description: description,

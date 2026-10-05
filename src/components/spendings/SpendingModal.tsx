@@ -52,6 +52,9 @@ export default function SpendingsModal({
 
   const [incomeDate, setIncomeDate] = useState("");
 
+  const createTempId = () =>
+    `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
 
   const SPENDING_CATEGORIES = [
     "Groceries",
@@ -67,6 +70,7 @@ export default function SpendingsModal({
     "Travel",
     "Gifts",
     "Alcohol",
+    "Credit card",
     "Other",
   ] as const;
 
@@ -178,6 +182,7 @@ export default function SpendingsModal({
               <input
                 type="date"
                 value={spendingDate}
+                max={new Date().toLocaleDateString("en-CA")}
                 onChange={(event) => setSpendingDate(event.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm
                  outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
@@ -337,7 +342,7 @@ export default function SpendingsModal({
 
     const transactionType: TransactionType = "EXPENSE";
     const newSpending: TempTransaction = {
-      id: crypto.randomUUID(),
+      id: createTempId(),
       amount,
       type: transactionType,
       description: description,

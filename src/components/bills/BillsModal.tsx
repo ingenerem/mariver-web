@@ -45,16 +45,19 @@ export default function BillsModal({
   const [isSavingBills, setIsSavingBills] = useState(false);
   const [saveError, setSaveError] = useState("");
 
+  const createTempId = () =>
+    `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
 
   const handleRemoveBill = (id: string) => {
-  setBills((currentBills) =>
-    currentBills.filter((bill) => bill.id !== id)
-  );
-};
+    setBills((currentBills) =>
+      currentBills.filter((bill) => bill.id !== id)
+    );
+  };
 
   return (
 
-    
+
 
     // Full-screen overlay behind the modal.
     // fixed + inset-0 makes it cover the whole screen.
@@ -170,8 +173,10 @@ export default function BillsModal({
                 className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               >
                 <option value="">Select category</option>
-                <option value="HOUSING">Housing</option>
+                <option value="MORTGAGE">Mortgage</option>
                 <option value="UTILITIES">Utilities</option>
+                <option value="HOUSING">Housing</option>
+                <option value="HOA">HOA</option>
                 <option value="FOOD">Food</option>
                 <option value="INSURANCE">Insurance</option>
                 <option value="SUBSCRIPTION">Subscription</option>
@@ -368,10 +373,14 @@ export default function BillsModal({
     setError("");
     const amount = Number(billAmount);
     const dueDay = Number(billDueDay);
+    if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31) {
+      setError("Due day must be a whole number between 1 and 31.");
+      return;
+    }
     const dueMonth = billIntervalUnit === "YEAR" ? Number(billDueMonth) : null;
 
     const newBill: TempBill = {
-      id: crypto.randomUUID(),
+      id: createTempId(),
       name: billName.trim(),
       amount,
       category: billCategory,
@@ -394,7 +403,7 @@ export default function BillsModal({
 
   async function handleSaveBills() {
     try {
-      setIsSavingBills(true); 
+      setIsSavingBills(true);
       setSaveError("");
 
 
@@ -402,9 +411,9 @@ export default function BillsModal({
       setIsSavingBills(true);
 
 
-    const response = await createBills(bills);
+      const response = await createBills(bills);
 
-    console.log("createBills response:", response);
+      console.log("createBills response:", response);
 
       onSaveSuccess()
 

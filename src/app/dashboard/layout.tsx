@@ -23,7 +23,7 @@ export default function DashboardLayout({
 
             try {
                 const response = await fetch(
-                    "http://localhost:8080/api/accounts/me",
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/accounts/me`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
