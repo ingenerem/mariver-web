@@ -55,6 +55,10 @@ export default function DashboardShell() {
     const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
 
     const [isLoadingAccount, setIsLoadingAccount] = useState(true);
+    const [billToPay, setBillToPay] = useState<BillResponse | null>(null);
+    const [paidDate, setPaidDate] = useState(
+        new Date().toISOString().split("T")[0]
+    );
 
 
     const [bills, setBills] = useState<BillResponse[]>([]);
@@ -66,32 +70,22 @@ export default function DashboardShell() {
     const [transactionSummary, setTransactionSummary] = useState<TransactionSummaryResponse | null>(null);
 
 
-    const handleMarkAsPaid = async (billId: number) => {
-
+    const handleMarkAsPaid = async (billId: number, paidDate: string) => {
         try {
-            // Used for the to show the user when the bills are still loading
+            await payBill(billId, paidDate);
+            await loadDashboard();
 
-            await payBill(billId);
-            await Promise.all([
-                await loadDashboard()
-
-
-
-            ]);
-
+            setBillToPay(null);
 
         } catch (error) {
             console.error("Failed to pay bill:", error);
         }
     };
-
     // Loads saved balance from the browser when the dashboard first opens.
     useEffect(() => {
         async function loadAccount() {
             try {
                 setIsLoadingAccount(true);
-
-
 
                 const dashboardData = await getDashboardStats()
                 setDashBoardStats(dashboardData)
@@ -648,7 +642,9 @@ export default function DashboardShell() {
                                             >
                                                 <div>
                                                     <p className="font-medium text-slate-900">
-                                                        {transaction.category}
+                                                        {transaction.transactionSource === "BILL"
+                                                            ? transaction.description
+                                                            : transaction.transactionSource}
                                                     </p>
 
                                                     <p className="text-xs text-slate-500">
@@ -667,14 +663,22 @@ export default function DashboardShell() {
                                                 <div className="text-right">
                                                     <p
                                                         className={`font-semibold ${transaction.type === "INCOME"
-                                                                ? "text-green-600"
-                                                                : "text-orange-600"
+                                                            ? "text-green-600"
+                                                            : "text-orange-600"
                                                             }`}
                                                     >
                                                         ${transaction.amount.toFixed(2)}
                                                     </p>
                                                 </div>
+                                                <button
+                                                    type="button"
+                                                    //onClick={() => do some deleting}
+                                                    className="rounded-lg bg-orange-300 px-3 py-1 text-xs font-medium text-white hover:bg-orange-400"
+                                                >
+                                                    Reverse
+                                                </button>
                                             </div>
+
                                         ))}
                                     </div>
                                 )}
@@ -728,7 +732,7 @@ export default function DashboardShell() {
 
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleMarkAsPaid(bill.id)}
+                                                        onClick={() => setBillToPay(bill)}
                                                         className="rounded-lg bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
                                                     >
                                                         Mark Paid
@@ -737,6 +741,51 @@ export default function DashboardShell() {
 
                                             </div>
                                         ))}
+                                    </div>
+                                )}
+                                {billToPay && (
+                                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                                        <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-lg">
+                                            <h2 className="text-lg font-semibold text-slate-900">
+                                                Mark as paid?
+                                            </h2>
+
+                                            <p className="mt-2 text-sm text-slate-600">
+                                                Are you sure you want to mark {billToPay.billName} as paid?
+                                            </p>
+                                            <div className="mt-4">
+                                                <label className="block text-sm font-medium text-slate-700">
+                                                    Date paid
+                                                </label>
+
+                                                <input
+                                                    type="date"
+                                                    value={paidDate}
+                                                        min={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-01`}
+    max={new Date().toISOString().split("T")[0]}
+    onChange={(e) => setPaidDate(e.target.value)}
+                                                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                                />
+                                            </div>
+
+                                            <div className="mt-6 flex justify-end gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setBillToPay(null)}
+                                                    className="rounded-lg border px-4 py-2 text-sm"
+                                                >
+                                                    Cancel
+                                                </button>
+
+                                                <button
+                                                    type="button" onClick={() => handleMarkAsPaid(billToPay.id, paidDate)
+                                                    }
+                                                    className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                                                >
+                                                    Mark Paid
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
@@ -786,9 +835,10 @@ export default function DashboardShell() {
                                                         ${bill.actualAmount.toFixed(2)}
                                                     </p>
 
+
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleMarkAsPaid(bill.id)}
+                                                        onClick={() => setBillToPay(bill)}
                                                         className="rounded-lg bg-red-700 px-3 py-1 text-xs font-medium text-white hover:bg-red-950"
                                                     >
                                                         Mark Paid
@@ -799,6 +849,55 @@ export default function DashboardShell() {
                                         ))}
                                     </div>
                                 )}
+
+                                {billToPay && (
+                                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                                        <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-lg">
+                                            <h2 className="text-lg font-semibold text-slate-900">
+                                                Mark as paid?
+                                            </h2>
+
+                                            <p className="mt-2 text-sm text-slate-600">
+                                                Are you sure you want to mark {billToPay.billName} as paid?
+                                            </p>
+                                            <div className="mt-4">
+                                                <label className="block text-sm font-medium text-slate-700">
+                                                    Date paid
+                                                </label>
+
+                                                <input
+                                                    type="date"
+                                                    value={paidDate}
+                                                        min={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-01`}
+    max={new Date().toISOString().split("T")[0]}
+    onChange={(e) => setPaidDate(e.target.value)}
+                                                    
+                                                
+                                                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                                />
+                                            </div>
+
+                                            <div className="mt-6 flex justify-end gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setBillToPay(null)}
+                                                    className="rounded-lg border px-4 py-2 text-sm"
+                                                >
+                                                    Cancel
+                                                </button>
+
+                                                <button
+                                                    type="button" onClick={() => handleMarkAsPaid(billToPay.id, paidDate)
+                                                    }
+                                                    className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                                                >
+                                                    Mark Paid
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                             </div>
 
                         </DashboardCard>

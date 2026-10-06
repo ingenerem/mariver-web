@@ -112,8 +112,9 @@ export async function getOverdueBills() {
 }
 
 
-export async function payBill(billId: number) {
-  const response = await fetch(`${API_BASE_URL}/api/bill_record/${billId}/pay`, {
+export async function payBill(billId: number, paidDate:string) {
+  console.log(paidDate, "------------------------")
+  const response = await fetch(`${API_BASE_URL}/api/bill_record/${billId}/${paidDate}/pay`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
