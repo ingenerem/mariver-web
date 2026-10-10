@@ -13,10 +13,6 @@ type TempTransaction = TransactionRequest & {
   id: string;
 };
 
-// type TempIncome = BillRequest & {
-//   id: string;
-// };
-
 // Main bills modal component.
 export default function IncomeModal({
   onClose,
@@ -24,7 +20,7 @@ export default function IncomeModal({
 }: IncomeModalProps) {
 
 
-      // Stores the list of bills added in this modal.
+  // Stores the list of bills added in this modal.
   const [incomeList, setIncome] = useState<TempTransaction[]>([]);
 
   // Stores what the user types for the new bill name.
@@ -34,10 +30,13 @@ export default function IncomeModal({
   // Keep it as a string because input values come from the browser as text.
   const [IncomeAmount, setIncomeAmount] = useState("");
 
+  // Stores what the user types for the for the income name.
+  const [incomeName, setIncomeName] = useState("");
+
   // Stores what the user types for the income date
   const [incomeDate, setIncomeDate] = useState(
-  () => new Date().toLocaleDateString("en-CA")
-);
+    () => new Date().toLocaleDateString("en-CA")
+  );
 
   const [IncomeType, setIncomeType] = useState("");
   const [description, setDescription] = useState("");
@@ -54,23 +53,23 @@ export default function IncomeModal({
 
 
   const INCOME_CATEGORIES = [
-  "Paycheck",
-  "Investment Income",
-  "Refund/Reimbursement",
-  "Gift",
-  "Business Income",
-  "Other",
-] as const;
+    "Paycheck",
+    "Investment Income",
+    "Reimbursement",
+    "Gift",
+    "Business Income",
+    "Other",
+  ] as const;
 
-//   const handleRemoveBill = (id: string) => {
-//   setBills((currentBills) =>
-//     currentBills.filter((bill) => bill.id !== id)
-//   );
-// };
+    const handleRemoveIncome = (id: string) => {
+    setIncome((incomeList) =>
+      incomeList.filter((income) => income.id !== id)
+    );
+  };
 
   return (
 
-    
+
 
     // Full-screen overlay behind the modal.
     // fixed + inset-0 makes it cover the whole screen.
@@ -121,6 +120,21 @@ export default function IncomeModal({
           {/* Responsive grid for the bill inputs */}
           <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[1.5fr_1fr_1fr_auto]">
 
+            <div>
+                           <label className="block text-sm font-medium text-slate-700">
+                Name <span className="text-red-500">*</span>
+              </label>
+
+              <input
+                type="text"
+                placeholder="e.g. Company name"
+                value={incomeName}
+                onChange={(event) => setIncomeName(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+
+            </div>
+
             {/* Bill name input */}
             <div>
 
@@ -128,7 +142,7 @@ export default function IncomeModal({
                 Source <span className="text-red-500">*</span>
               </label>
 
-               <select
+              <select
                 value={incomeCategory}
                 onChange={(e) => setIncomeCategory(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200"
@@ -175,54 +189,54 @@ export default function IncomeModal({
                 max="31"
                 value={incomeDate}
                 onChange={(e) => setIncomeDate(e.target.value)}
-  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm
              focus:border-green-500 focus:outline-none focus:ring-2
              focus:ring-green-200"
 
-               
+
               />
             </div>
 
 
             <div>
-            
+
 
               <div className="mt-1 flex gap-2">
-            
+
               </div>
             </div>
 
 
- 
-            {/* Description + Add Spending */}
-<div className="md:col-span-12">
-  <label className="block text-sm font-medium text-slate-700">
-    Description
-  </label>
 
-  <div className="mt-1 grid grid-cols-1 gap-4 md:grid-cols-12 md:items-center">
-    <textarea
-      value={description}
-      onChange={(event) => setDescription(event.target.value)}
-      placeholder="e.g. Bi-Weekly paycheck"
-      rows={2}
-      maxLength={255}
-      className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2 text-sm
+            {/* Description + Add Spending */}
+            <div className="md:col-span-12">
+              <label className="block text-sm font-medium text-slate-700">
+                Description
+              </label>
+
+              <div className="mt-1 grid grid-cols-1 gap-4 md:grid-cols-12 md:items-center">
+                <textarea
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  placeholder="e.g. Bi-Weekly paycheck"
+                  rows={2}
+                  maxLength={255}
+                  className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2 text-sm
                  outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100
                  md:col-span-9"
-    />
+                />
 
 
-    <button
-      type="button"
-      onClick={handleAddIncome}
-      className="w-full rounded-xl bg-green-600 px-5 py-2 text-sm font-medium
+                <button
+                  type="button"
+                  onClick={handleAddIncome}
+                  className="w-full rounded-xl bg-green-600 px-5 py-2 text-sm font-medium
                  text-white hover:bg-green-700 md:col-span-3"
-    >
-      Add income
-    </button>
-  </div>
-</div>
+                >
+                  Add income
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -254,7 +268,7 @@ export default function IncomeModal({
               <div className="mt-3 space-y-2">
                 {incomeList.map((income) => (
                   <div
-                    key={null}
+                    key={income.id}
                     className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm"
                   >
                     <div>
@@ -266,7 +280,7 @@ export default function IncomeModal({
                     </p>
                     <button
                       type="button"
-        
+                      onClick={() => handleRemoveIncome(income.id)}
                       disabled={isSavingIncomes}
                       className="text-sm font-medium text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -331,34 +345,35 @@ export default function IncomeModal({
   // Adds the typed bill into the bills list.
   function handleAddIncome() {
 
-       // Prevents empty information from being added.
-        if (incomeCategory.trim() === "" || IncomeAmount.trim() === "") {
-          // Shows validation message to the user.
-          setError("Please fill up all required fields.");
-          return;
-        }
-    
-        // Clears previous error once validation passes.
-        setError("");
-        const amount = Number(IncomeAmount);
-        const date = incomeDate;
-    
-        const transactionType: TransactionType = "INCOME";
-        const newIncome: TempTransaction = {
-           id: createTempId(),
-          amount,
-          type: transactionType,
-          description: description,
-          category: incomeCategory.trim(),
-          transactionSource: "INCOME",
-          transactionDate: date,
-        };
-    
-        setIncome([...incomeList, newIncome]);
-    
-        // Clears the form after adding the bill.
-        setIncomeAmount("");
-        setIncomeCategory("");
+    // Prevents empty information from being added.
+    if (incomeCategory.trim() === "" || IncomeAmount.trim() === "") {
+      // Shows validation message to the user.
+      setError("Please fill up all required fields.");
+      return;
+    }
+
+    // Clears previous error once validation passes.
+    setError("");
+    const amount = Number(IncomeAmount);
+
+    const transactionType: TransactionType = "INFLOW";
+    const newIncome: TempTransaction = {
+
+      id: createTempId(),
+      name: incomeName.trim(),
+      amount,
+      type: transactionType,
+      description,
+      category: incomeCategory.trim(),
+      transactionSource: "INCOME",
+      transactionDate: incomeDate,
+    };
+
+    setIncome([...incomeList, newIncome]);
+
+    // Clears the form after adding the bill.
+    setIncomeAmount("");
+    setIncomeCategory("");
 
   }
 
@@ -367,30 +382,30 @@ export default function IncomeModal({
   async function handleSaveIncomes() {
 
     try {
-          setIsSavingIncomes(true);
-          setSaveError("");
-    
-    
-          // API call will go here next
-          setIsSavingIncomes(true);
-    
-    
-        const response = await createTransactions(incomeList);
-    
-       console.log("createTransactions response:", response);
+      setIsSavingIncomes(true);
+      setSaveError("");
+
+
+      // API call will go here next
+      setIsSavingIncomes(true);
+
+
+      const response = await createTransactions(incomeList);
+
+      console.log("createTransactions response:", response);
       // await new Promise((resolve) => setTimeout(resolve, 5000));
-    
-          onSaveSuccess()
-    
-          onClose();
-        } catch (error) {
-          setSaveError("Could not save bills. " + error);
-          console.log(error)
-        } finally {
-          setIsSavingIncomes(false);
-        }
-    
-      }
-   
-  
+
+      onSaveSuccess()
+
+      onClose();
+    } catch (error) {
+      setSaveError("Could not save income. " + error);
+      console.log(error)
+    } finally {
+      setIsSavingIncomes(false);
+    }
+
+  }
+
+
 }

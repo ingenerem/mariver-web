@@ -1,3 +1,4 @@
+import { BillRequest, UpdateBillRequest } from "@/types/bill";
 import type {
   TransactionRequest,
   TransactionResponse,
@@ -74,3 +75,50 @@ export async function getTransactionSummary():Promise<TransactionSummaryResponse
   return data;
 
 }
+
+
+export async function reverseTransaction(transactionId: number, reason: string) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/transactions/${transactionId}/reverse`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
+      },
+      body: JSON.stringify({
+        reason,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Failed to reverse transaction");
+  }
+}
+
+
+export async function getMonthlyTransactions(year: number, month: number): Promise<TransactionResponse[]> {
+
+  const response = await fetch(`${API_BASE_URL}/api/transactions?year=${year}&month=${month}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
+    },
+  });
+
+  if (!response.ok) {
+   
+    throw new Error("Failed to retrieve transactions");
+  }
+
+    const data: TransactionResponse[] = await response.json();
+
+  console.log("Transactions response:", data);
+
+  return data;
+}
+
+
+
