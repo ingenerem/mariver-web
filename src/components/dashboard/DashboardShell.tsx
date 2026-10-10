@@ -99,7 +99,6 @@ export default function DashboardShell() {
         useState(false);
 
 
-
     // Controls whether the preset bills modal is open or closed.
 
     const [isBillsModalOpen, setIsBillsModalOpen] = useState(false);
@@ -226,8 +225,6 @@ export default function DashboardShell() {
 
                 setIsLoadingAccount(true);
 
-
-
                 const dashboardData = await getDashboardStats()
 
                 setDashBoardStats(dashboardData)
@@ -243,8 +240,6 @@ export default function DashboardShell() {
             }
 
         }
-
-
 
         loadAccount();
 

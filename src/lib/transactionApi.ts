@@ -1,4 +1,7 @@
 import { BillRequest, UpdateBillRequest } from "@/types/bill";
+
+
+console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
 import type {
   TransactionRequest,
   TransactionResponse,
