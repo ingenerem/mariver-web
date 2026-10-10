@@ -11,7 +11,7 @@ type BillsModalProps = {
 };
 
 type TempBill = BillRequest & {
-  id: string;
+  tempId: string;
 };
 
 // Main bills modal component.
@@ -30,6 +30,8 @@ export default function BillsModal({
   // Keep it as a string because input values come from the browser as text.
   const [billAmount, setBillAmount] = useState("");
 
+  const [startDate, setStartDate] = useState(() => new Date().toLocaleDateString("en-CA"));
+
   // Stores what the user types for the due day.
   const [billDueDay, setBillDueDay] = useState("");
 
@@ -37,6 +39,10 @@ export default function BillsModal({
   const [billIntervalValue, setBillIntervalValue] = useState("1");
   const [billIntervalUnit, setBillIntervalUnit] = useState("MONTH");
   const [billDueMonth, setBillDueMonth] = useState("");
+
+  const [paymentType, setPaymentType] = useState("FIXED");
+
+  const [autoPay, setAutoPay] = useState(false);
 
   // Stores validation errors shown to the user.
   const [error, setError] = useState("");
@@ -51,7 +57,7 @@ export default function BillsModal({
 
   const handleRemoveBill = (id: string) => {
     setBills((currentBills) =>
-      currentBills.filter((bill) => bill.id !== id)
+      currentBills.filter((bill) => bill.tempId !== id)
     );
   };
 
@@ -140,27 +146,6 @@ export default function BillsModal({
               />
             </div>
 
-            {/* Bill due day input */}
-            <div>
-
-              <label className="block text-sm font-medium text-slate-700">
-                Due day <span className="text-red-500">*</span>
-              </label>
-
-              <input
-                type="number"
-
-                // Restricts values between 1 and 31.
-                min="1"
-                max="31"
-
-                placeholder="15"
-                value={billDueDay}
-                onChange={(event) => setBillDueDay(event.target.value)}
-
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              />
-            </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700">
@@ -188,6 +173,21 @@ export default function BillsModal({
               </select>
             </div>
 
+            {/* Spending date */}
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-slate-700">
+                Start date<span className="text-red-500">*</span>
+              </label>
+
+              <input
+                type="date"
+                value={startDate}
+                onChange={(event) => setStartDate(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm
+                 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-slate-700">
                 Repeats every <span className="text-red-500">*</span>
@@ -207,32 +207,50 @@ export default function BillsModal({
                   onChange={(event) => setBillIntervalUnit(event.target.value)}
                   className="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 >
-                  <option value="MONTH">Month</option>
-                  <option value="WEEK">Week</option>
-                  <option value="YEAR">Year</option>
+                  <option value="MONTH">Month(s)</option>
+                  <option value="WEEK">Week(s)</option>
+                  <option value="YEAR">Year(s)</option>
                 </select>
               </div>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Fixed amount?
+              </label>
 
-            {billIntervalUnit === "YEAR" && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700">
-                  Due month <span className="text-red-500">*</span>
-                </label>
+              <select
+                value={paymentType}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setPaymentType(value);
 
-                <input
-                  type="number"
-                  min="1"
-                  max="12"
-                  step="1"
-                  placeholder="1"
-                  value={billDueMonth}
-                  onChange={(event) => setBillDueMonth(event.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-            )}
+                  if (value === "VARIABLE") {
+                    setAutoPay(false);
+                  }
+                }}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+              >
+                <option value="FIXED">Yes</option>
+                <option value="VARIABLE">No</option>
+              </select>
+            </div>
+
+            {paymentType === "FIXED" && (<div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Auto-pay?
+              </label>
+
+              <select
+                value={autoPay ? "yes" : "no"}
+                onChange={(e) => setAutoPay(e.target.value === "yes")}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>)
+            }
 
             {/* Add bill button */}
             <div
@@ -279,20 +297,33 @@ export default function BillsModal({
               <div className="mt-3 space-y-2">
                 {bills.map((bill) => (
                   <div
-                    key={bill.id}
+                    key={bill.tempId}
                     className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm"
                   >
                     <div>
-                      <p className="font-medium text-slate-900">{bill.name}</p>
-                      <p className="text-xs text-slate-500">Due day {bill.dueDay}</p>
+                      <p className="font-medium text-slate-900">
+                        {bill.name}
+                      </p>
+
+                      <p className="text-xs text-slate-500">
+                        Next due: {bill.startDate} · Every {bill.intervalValue}{" "}
+                        {bill.intervalUnit.toLowerCase()}
+                      </p>
+
+                      <p className="text-xs text-slate-500">
+                        {bill.paymentType === "FIXED" ? "Fixed amount" : "Variable amount"}
+                        {bill.paymentType === "FIXED" &&
+                          ` · Auto-pay: ${bill.autoPay ? "Yes" : "No"}`}
+                      </p>
                     </div>
 
                     <p className="font-semibold text-slate-900">
                       {"$" + bill.amount.toLocaleString()}
                     </p>
+
                     <button
                       type="button"
-                      onClick={() => handleRemoveBill(bill.id)}
+                      onClick={() => handleRemoveBill(bill.tempId)}
                       disabled={isSavingBills}
                       className="text-sm font-medium text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -357,37 +388,35 @@ export default function BillsModal({
   function handleAddBill() {
 
     // Prevents empty bill information from being added.
-    if (billName.trim() === "" || billAmount.trim() === "" || billDueDay.trim() === "" ||
-      billCategory === "" || billIntervalValue.trim() === "" || billIntervalUnit.trim() === "") {
-      // Shows validation message to the user.
-      setError("Please fill up all required fields.");
+    // Prevents empty bill information from being added.
+    if (
+      billName.trim() === "" ||
+      billAmount.trim() === "" ||
+      billCategory === "" ||
+      billIntervalValue.trim() === "" ||
+      billIntervalUnit === "" ||
+      startDate === "" ||
+      paymentType === ""
+    ) {
+      setError("Please fill out all required fields.");
       return;
     }
 
-    if (billIntervalUnit === "YEAR" && billDueMonth.trim() === "" && (Number(billDueMonth) < 1 ||
-      Number(billDueMonth) > 12)) {
-      setError("Please select a due month between 1 and 12 for yearly bills.");
-      return;
-    }
+
     // Clears previous error once validation passes.
     setError("");
     const amount = Number(billAmount);
-    const dueDay = Number(billDueDay);
-    if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31) {
-      setError("Due day must be a whole number between 1 and 31.");
-      return;
-    }
-    const dueMonth = billIntervalUnit === "YEAR" ? Number(billDueMonth) : null;
 
     const newBill: TempBill = {
-      id: createTempId(),
+      tempId: createTempId(),
       name: billName.trim(),
       amount,
       category: billCategory,
       intervalValue: Number(billIntervalValue),
       intervalUnit: billIntervalUnit,
-      dueDay,
-      dueMonth: billIntervalUnit === "YEAR" ? dueMonth : null,
+      startDate,
+      autoPay,
+      paymentType,
     };
 
 
@@ -405,6 +434,8 @@ export default function BillsModal({
     try {
       setIsSavingBills(true);
       setSaveError("");
+
+      console.log(bills);
 
 
       // API call will go here next

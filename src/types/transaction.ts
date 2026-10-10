@@ -1,10 +1,11 @@
-export type TransactionType = "INCOME" | "EXPENSE";
+export type TransactionType = "INFLOW" | "OUTFLOW";
 
 export type TransactionStatus = "POSTED" | "DELETED";
 
 export type TransactionSource = "INCOME" | "SPENDING" | "BILL";
 
 export interface TransactionRequest {
+  name: string;
   amount: number;
   type: TransactionType;
   description?: string;
@@ -15,6 +16,7 @@ export interface TransactionRequest {
 
 export interface TransactionResponse {
   id: number;
+  name:string;
   amount: number;
   type: TransactionType;
   description?: string;
@@ -23,6 +25,7 @@ export interface TransactionResponse {
   transactionDate: string;
   status: TransactionStatus;
   createdAt: string;
+  autoPaid: boolean;
 }
 
 export interface SpendingCategoryTotal {

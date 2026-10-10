@@ -28,14 +28,16 @@ export default function SpendingsModal({
   // Stores the list of bills added in this modal.
   const [spendings, setSpendings] = useState<TempTransaction[]>([]);
 
-  // Stores what the user types for the new bill name.
+    // Stores what the user types for the for the transaction name.
+  const [spendingName, setSpendingName] = useState("");
+
+  // Stores what the user types for the transaction category.
   const [spendingCategory, setSpendingCategory] = useState("");
 
-  // Stores what the user types for the new bill amount.
+
   // Keep it as a string because input values come from the browser as text.
   const [spendingAmount, setSpendingAmount] = useState("");
 
-  // Stores what the user types for the due day.
   const [spendingDate, setSpendingDate] = useState(() => new Date().toLocaleDateString("en-CA"));
 
   const [spendingType, setSpendingType] = useState("");
@@ -133,8 +135,23 @@ export default function SpendingsModal({
 
           <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-12">
 
+            <div className="md:col-span-3">
+
+              <label className="block text-sm font-medium text-slate-700">
+                Name <span className="text-red-500">*</span>
+              </label>
+
+              <input
+                type="text"
+                placeholder="e.g. Walmart"
+                value={spendingName}
+                onChange={(event) => setSpendingName(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+
             {/* Source */}
-            <div className="md:col-span-5">
+            <div className="md:col-span-3">
               <label className="block text-sm font-medium text-slate-700">
                 Category <span className="text-red-500">*</span>
               </label>
@@ -174,7 +191,7 @@ export default function SpendingsModal({
 
 
             {/* Spending date */}
-            <div className="md:col-span-4">
+            <div className="md:col-span-3">
               <label className="block text-sm font-medium text-slate-700">
                 Spending date <span className="text-red-500">*</span>
               </label>
@@ -329,7 +346,7 @@ export default function SpendingsModal({
   // Adds the typed spendings into the transactions list.
   function handleAddSpending() {
     // Prevents empty information from being added.
-    if (spendingCategory.trim() === "" || spendingAmount.trim() === "") {
+    if (spendingName.trim() === "" || spendingCategory.trim() === "" || spendingAmount.trim() === "") {
       // Shows validation message to the user.
       setError("Please fill up all required fields.");
       return;
@@ -340,9 +357,10 @@ export default function SpendingsModal({
     const amount = Number(spendingAmount);
     const date = spendingDate;
 
-    const transactionType: TransactionType = "EXPENSE";
+    const transactionType: TransactionType = "OUTFLOW";
     const newSpending: TempTransaction = {
       id: createTempId(),
+      name:spendingName,
       amount,
       type: transactionType,
       description: description,
