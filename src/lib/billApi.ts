@@ -141,7 +141,7 @@ export async function syncDashboard() {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(errorText || "Failed to pay bill");
+    throw new Error(errorText || "Failed to sync bills");
   }
 
   return response;
