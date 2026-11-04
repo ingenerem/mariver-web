@@ -27,6 +27,11 @@ export default function TransactionsPage() {
     const [transactionToReverse, setTransactionToReverse] = useState<number | null>(null);
     const [reverseReason, setReverseReason] = useState("");
     const [reverseError, setReverseError] = useState("");
+    const selectedTransaction = transactions.find(
+        (transaction) => transaction.id === transactionToReverse
+    );
+
+    const isAdjustment = selectedTransaction?.type === "ADJUSTMENT";
 
     const loadTransactions = async () => {
 
@@ -66,7 +71,7 @@ export default function TransactionsPage() {
     }, [selectedMonth]);
 
     return (
-       <main className="flex h-screen overflow-hidden bg-slate-50 text-slate-900">
+        <main className="flex h-screen overflow-hidden bg-slate-50 text-slate-900">
 
             {/* Desktop sidebar */}
             <aside className="sticky top-0 z-30 hidden h-screen w-16 shrink-0 border-r border-slate-200 bg-white md:block">
@@ -350,53 +355,86 @@ export default function TransactionsPage() {
                     {transactionToReverse !== null && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
                             <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-lg">
-                                <h2 className="text-lg font-semibold text-slate-900">
-                                    Reverse transaction?
-                                </h2>
 
-                                <p className="mt-2 text-sm text-slate-600">
-                                    This will reverse the transaction and update your account balance
-                                    and financial totals. If it's a bill payment, the bill will
-                                    become unpaid again.
-                                </p>
+                                {isAdjustment ? (
+                                    <>
+                                        <h2 className="text-lg font-semibold text-slate-900">
+                                            Balance Adjustment
+                                        </h2>
 
-                                <textarea
-                                    value={reverseReason}
-                                    onChange={(e) => {
-                                        setReverseReason(e.target.value);
-                                        setReverseError("");
-                                    }}
-                                    placeholder="Reason for reversal"
-                                    className="mt-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                                />
+                                        <p className="mt-2 text-sm text-slate-600">
+                                            Balance adjustments cannot be reversed or deleted.
+                                            To correct your balance, create a new adjustment
+                                            with the correct amount. Your previous adjustment
+                                            will remain in your transaction history.
+                                        </p>
 
-                                {reverseError && (
-                                    <p className="mt-2 text-sm text-red-600">
-                                        {reverseError}
-                                    </p>
+                                        <div className="mt-6 flex justify-end">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setTransactionToReverse(null);
+                                                    setReverseReason("");
+                                                    setReverseError("");
+                                                }}
+                                                className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                                            >
+                                                Close
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h2 className="text-lg font-semibold text-slate-900">
+                                            Reverse transaction?
+                                        </h2>
+
+                                        <p className="mt-2 text-sm text-slate-600">
+                                            This will reverse the transaction and update your account balance
+                                            and financial totals. If it's a bill payment, the bill will
+                                            become unpaid again.
+                                        </p>
+
+                                        <textarea
+                                            value={reverseReason}
+                                            onChange={(e) => {
+                                                setReverseReason(e.target.value);
+                                                setReverseError("");
+                                            }}
+                                            placeholder="Reason for reversal"
+                                            className="mt-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                        />
+
+                                        {reverseError && (
+                                            <p className="mt-2 text-sm text-red-600">
+                                                {reverseError}
+                                            </p>
+                                        )}
+
+                                        <div className="mt-6 flex justify-end gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setTransactionToReverse(null);
+                                                    setReverseReason("");
+                                                    setReverseError("");
+                                                }}
+                                                className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                                            >
+                                                Cancel
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={handleReverseTransaction}
+                                                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                                            >
+                                                Reverse
+                                            </button>
+                                        </div>
+                                    </>
                                 )}
 
-                                <div className="mt-6 flex justify-end gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setTransactionToReverse(null);
-                                            setReverseReason("");
-                                            setReverseError("");
-                                        }}
-                                        className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
-                                    >
-                                        Cancel
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={handleReverseTransaction}
-                                        className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-                                    >
-                                        Reverse
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     )}

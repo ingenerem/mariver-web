@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import type { BillRequest } from "@/types/bill";
 import { createBills } from "@/lib/billApi";
+import type { Fund } from "@/types/fund";
 // Props expected by the modal component.
 type BillsModalProps = {
 
+  funds: Fund[];
   // Function used to close the modal.
   onClose: () => void;
   //Function to update on success  
   onSaveSuccess: () => void;
+
 };
 
 type TempBill = BillRequest & {
@@ -18,6 +21,7 @@ type TempBill = BillRequest & {
 export default function BillsModal({
   onClose,
   onSaveSuccess,
+  funds,
 }: BillsModalProps) {
 
   // Stores the list of bills added in this modal.
@@ -60,6 +64,8 @@ export default function BillsModal({
       currentBills.filter((bill) => bill.tempId !== id)
     );
   };
+
+  const [billFundId, setBillFundId] = useState<number | null>(null);
 
   return (
 
@@ -252,16 +258,36 @@ export default function BillsModal({
             </div>)
             }
 
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">
+                Funding Source
+              </label>
+
+              <select
+                value={billFundId ?? ""}
+                onChange={(e) =>
+                  setBillFundId(
+                    e.target.value === "" ? null : Number(e.target.value)
+                  )
+                }
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              >
+                <option value="">Main Balance</option>
+
+                {funds.map((fund) => (
+                  <option key={fund.id} value={fund.id}>
+                    {fund.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Add bill button */}
-            <div
-              className="flex items-end">
-              <button onClick={handleAddBill}
+            <div className="col-span-full flex justify-end">
+              <button
                 type="button"
-                disabled={isSavingBills}
-                className={`{w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 ${isSavingBills
-                  ? "cursor-not-allowed opacity-50"
-                  : "text-slate-400 hover:text-white"
-                  }`}
+                onClick={handleAddBill}
+                className="rounded-xl bg-blue-600 px-4 py-2 text-white"
               >
                 Add bill
               </button>
@@ -417,7 +443,10 @@ export default function BillsModal({
       startDate,
       autoPay,
       paymentType,
+      fundId: billFundId,
     };
+
+    console.log(newBill," Ibibilli")
 
 
     setBills([...bills, newBill]);
@@ -426,6 +455,7 @@ export default function BillsModal({
     setBillName("");
     setBillAmount("");
     setBillDueDay("");
+    setBillFundId(null);
   }
 
   // Saving Bills to the backend
@@ -435,7 +465,7 @@ export default function BillsModal({
       setIsSavingBills(true);
       setSaveError("");
 
-      console.log(bills);
+      console.log(bills, "And iiiiiiiyiaaaaaaaaaaaa");
 
 
       // API call will go here next

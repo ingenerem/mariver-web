@@ -1,8 +1,10 @@
 import { createTransactions } from "@/lib/transactionApi";
 import { TransactionRequest, TransactionType } from "@/types/transaction";
 import { useEffect, useState } from "react";
+import type { Fund } from "@/types/fund";
 type SpendingModalProps = {
 
+  funds: Fund[];
   // Function used to close the modal.
   onClose: () => void;
   //Function to update on success  
@@ -22,13 +24,14 @@ type TempTransaction = TransactionRequest & {
 export default function SpendingsModal({
   onClose,
   onSaveSuccess,
+  funds,
 }: SpendingModalProps) {
 
 
   // Stores the list of bills added in this modal.
   const [spendings, setSpendings] = useState<TempTransaction[]>([]);
 
-    // Stores what the user types for the for the transaction name.
+  // Stores what the user types for the for the transaction name.
   const [spendingName, setSpendingName] = useState("");
 
   // Stores what the user types for the transaction category.
@@ -57,6 +60,8 @@ export default function SpendingsModal({
   const createTempId = () =>
     `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
+  const [fundId, setFundId] = useState<number | null>(null);
+
 
   const SPENDING_CATEGORIES = [
     "Groceries",
@@ -76,12 +81,6 @@ export default function SpendingsModal({
     "Other",
   ] as const;
 
-
-  //   const handleRemoveBill = (id: string) => {
-  //   setBills((currentBills) =>
-  //     currentBills.filter((bill) => bill.id !== id)
-  //   );
-  // };
 
 
 
@@ -206,8 +205,9 @@ export default function SpendingsModal({
               />
             </div>
 
+
             {/* Description + Add Spending */}
-            <div className="md:col-span-12">
+            <div className="md:col-span-10">
               <label className="block text-sm font-medium text-slate-700">
                 Description
               </label>
@@ -223,6 +223,28 @@ export default function SpendingsModal({
                  outline-none focus:border-orange-600 focus:ring-2 focus:ring-orange-100
                  md:col-span-9"
                 />
+
+                <div className="md:col-span-3 min-w-0 -mt-7">
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Funding Source
+                  </label>
+
+                  <select
+                    value={fundId ?? ""}
+                    onChange={(e) =>
+                      setFundId(e.target.value === "" ? null : Number(e.target.value))
+                    }
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  >
+                    <option value="">Main Balance</option>
+
+                    {funds.map((fund) => (
+                      <option key={fund.id} value={fund.id}>
+                        {fund.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 <button
                   type="button"
@@ -282,7 +304,7 @@ export default function SpendingsModal({
                     </p>
                     <button
                       type="button"
-
+                      onClick={() => handleRemoveTransaction(spending.tempId)}
                       disabled={isSavingSpendings}
                       className="text-sm font-medium text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -360,13 +382,14 @@ export default function SpendingsModal({
     const transactionType: TransactionType = "OUTFLOW";
     const newSpending: TempTransaction = {
       id: createTempId(),
-      name:spendingName,
+      name: spendingName,
       amount,
       type: transactionType,
       description: description,
       category: spendingCategory.trim(),
       transactionSource: "SPENDING",
       transactionDate: date,
+      fundId: fundId,
     };
 
     setSpendings([...spendings, newSpending]);

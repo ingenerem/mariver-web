@@ -15,6 +15,8 @@ import {
 import { BillDetailsResponse, BillResponse } from "@/types/bill";
 import { deactivateBill, getAllBills } from "@/lib/billApi";
 import { updateBill } from "@/lib/billApi";
+import { getFunds } from "@/lib/FundApi";
+import { Fund } from "@/types/fund";
 
 
 
@@ -23,6 +25,7 @@ export default function BillsPage() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const [bills, setBills] = useState<BillDetailsResponse[]>([]);
+    const [funds, setFunds] = useState<Fund[]>([]);
 
     const [billToDeactivate, setBillToDeactivate] = useState<BillDetailsResponse | null>(null);
     const [deactivateError, setDeactivateError] = useState("");
@@ -34,6 +37,7 @@ export default function BillsPage() {
     const [editIntervalUnit, setEditIntervalUnit] = useState("MONTH");
     const [editAutoPay, setEditAutoPay] = useState(false);
     const [editDueDate, setEditDueDate] = useState("");
+    const [editFundId, setEditFundId] = useState<number | null>(null);
 
     const openEditBill = (bill: BillDetailsResponse) => {
         setEditError("")
@@ -48,8 +52,12 @@ export default function BillsPage() {
 
         console.log("aheemmm")
         try {
-            const response = await getAllBills();
-            setBills(response);
+            const [billsResponse, fundsResponse] = await Promise.all([
+                getAllBills(),
+                getFunds()
+            ]);
+            setBills(billsResponse);
+        setFunds(fundsResponse);
         } catch (error) {
             console.error("Failed to load bills:", error);
         }
@@ -140,7 +148,7 @@ export default function BillsPage() {
     }, []);
 
     return (
-       <main className="flex h-screen overflow-hidden bg-slate-50 text-slate-900">
+        <main className="flex h-screen overflow-hidden bg-slate-50 text-slate-900">
 
             {/* Desktop sidebar */}
             <aside className="sticky top-0 z-30 hidden h-screen w-16 shrink-0 border-r border-slate-200 bg-white md:block">
@@ -205,7 +213,7 @@ export default function BillsPage() {
                     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
 
                         {/* Card heading */}
-                       <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-5">
+                        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-5">
                             <div>
                                 <h2 className="font-semibold text-slate-900">
                                     Recurring bills
@@ -504,6 +512,28 @@ export default function BillsPage() {
                                     onChange={(e) => setEditDueDate(e.target.value)}
                                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
                                 />
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-xs font-medium text-slate-600">
+                                    Funding source
+                                </label>
+                                <select
+                                    value={editFundId ?? ""}
+                                    onChange={(e) =>
+                                        setEditFundId(
+                                            e.target.value === "" ? null : Number(e.target.value)
+                                        )
+                                    }
+                                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                                >
+                                    <option value="">Main Balance</option>
+                                    {funds.map((fund) => (
+                                        <option key={fund.id} value={fund.id}>
+                                            {fund.name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <label className="flex items-center justify-between rounded-lg bg-blue-50 px-3 py-2.5">

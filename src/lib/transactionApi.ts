@@ -97,7 +97,8 @@ export async function reverseTransaction(transactionId: number, reason: string) 
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(errorText || "Failed to reverse transaction");
+    console.log(errorText)
+    throw new Error(errorText || "Failed to reverse transaction please");
   }
 }
 
