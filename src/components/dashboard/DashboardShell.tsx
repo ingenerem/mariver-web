@@ -30,7 +30,8 @@ import { getTransactions, getTransactionSummary, reverseTransaction } from "@/li
 
 import { formatDate } from "@/utils/dateFormat";
 
-import { CalendarDays, ChartPie, CircleCheckBig, HandCoins, ReceiptText, RefreshCw, TrendingDown, TrendingUp, WalletCards } from "lucide-react";
+import { CalendarDays, ChartPie, CircleCheckBig, HandCoins, PiggyBank, Plus, ReceiptText, RefreshCw, TrendingDown, TrendingUp, WalletCards } from "lucide-react";
+
 
 import Link from "next/link";
 
@@ -42,6 +43,9 @@ import {
 
 } from "lucide-react";
 
+import CreateFundModal, { AllocateFundModal, ReleaseFundModal } from "@/components/dashboard/FundModal";
+import { allocateFund, createFund, getFunds, releaseFund } from "@/lib/FundApi";
+import { Fund } from "@/types/fund";
 
 
 export default function DashboardShell() {
@@ -55,18 +59,11 @@ export default function DashboardShell() {
     type DashboardStats = {
 
         currentBalance: number;
-
         protectedBills: number;
-
-        emergencyFund: number,
-
         spendableAmount: number;
-
-        otherSavings: number;
+        accountBalance: number;
 
     };
-
-
 
     const [stats, setDashBoardStats] = useState<DashboardStats>({
 
@@ -76,19 +73,18 @@ export default function DashboardShell() {
 
         spendableAmount: 0,
 
-        emergencyFund: 0,
+        accountBalance: 0,
 
-        otherSavings: 0,
 
     });
 
+    const availableBalance = Math.max(
+        0,
+        stats?.spendableAmount ?? 0
+    );
 
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-
-
-
 
 
 
@@ -162,12 +158,47 @@ export default function DashboardShell() {
     const [transactionSummary, setTransactionSummary] = useState<TransactionSummaryResponse | null>(null);
 
 
+    const [funds, setFunds] = useState<Fund[]>([]);
+
+    const [createFundOpen, setCreateFundOpen] = useState(false);
+
+    const [selectedFund, setSelectedFund] = useState<Fund | null>(null);
+
+    const [fundAction, setFundAction] = useState<
+        "allocate" | "release" | null
+    >(null);
+
+    const [billFundId, setBillFundId] = useState<number | null>(null);
+
+    const handleCreateFund = async (
+        name: string,
+        initialAmount: number
+    ) => {
+        const newFund = await createFund({ name });
+
+        if (initialAmount > 0) {
+            await allocateFund(newFund.id, {
+                amount: initialAmount,
+            });
+        }
+
+        await loadDashboard();
+    };
+
+    const handleAllocateFund = async (fundId: number, amount: number) => {
+        await allocateFund(fundId, { amount });
+        await loadDashboard();
+    };
+
+    const handleReleaseFund = async (fundId: number, amount: number) => {
+        await releaseFund(fundId, { amount });
+        await loadDashboard();
+    };
+
+    const [paymentFundId, setPaymentFundId] = useState<number | null>(null);
 
 
-
-    const handleMarkAsPaid = async (billId: number, paidDate: string, amount: number) => {
-
-
+    const handleMarkAsPaid = async (billId: number, paidDate: string, amount: number, paymentFundId: number | null) => {
 
         if (amountPaid.trim() === "") {
 
@@ -176,8 +207,6 @@ export default function DashboardShell() {
             return;
 
         }
-
-
 
         const actualAmount = Number(amountPaid);
 
@@ -191,21 +220,12 @@ export default function DashboardShell() {
 
         }
 
-
-
         try {
 
-            await payBill(billId, paidDate, amount);
-
+            await payBill(billId, paidDate, amount, paymentFundId);
             await loadDashboard();
-
-
-
             setAmountPaid("");
-
             setBillToPay(null);
-
-
 
         } catch (error) {
 
@@ -215,6 +235,73 @@ export default function DashboardShell() {
 
     };
 
+
+    const fundCards = Array.from({ length: 2 }, (_, index) => {
+        const fund = funds[index];
+        return (
+            <DashboardCard
+                key={fund ? `fund-${fund.id}` : `empty-fund-${index}`}
+                title={fund?.name ?? "New Savings Fund"}
+                icon={<PiggyBank className="h-5 w-5 text-slate-600" />}
+                className="flex flex-col p-4"
+            >
+                {fund ? (
+                    <>
+                        <p className="mt-3 text-1xl font-semibold text-slate-900">
+                            {Number(fund.balance).toLocaleString("en-US", {
+                                style: "currency",
+                                currency: "USD",
+                            })}
+                        </p>
+                        <p className="mt-2 text-xs text-slate-500">
+                            Available Balance:{" "}
+                            <span className="font-semibold text-slate-700">
+                                {Number(fund.availableBalance).toLocaleString("en-US", {
+                                    style: "currency",
+                                    currency: "USD",
+                                })}
+                            </span>
+                        </p>
+
+                        <div className="mt-auto flex gap-2 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSelectedFund(fund);
+                                    setFundAction("allocate");
+                                }}
+                                className="rounded-lg bg-green-700 px-3 py-2 text-xs font-medium text-white hover:bg-green-900"
+                            >
+                                Add Money
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSelectedFund(fund);
+                                    setFundAction("release");
+                                }}
+                                className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                            >
+                                Release
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="mt-4">
+                        <button
+                            type="button"
+                            onClick={() => setCreateFundOpen(true)}
+                            className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Create Fund
+                        </button>
+                    </div>
+                )}
+            </DashboardCard>
+        );
+    })
     // Loads saved balance from the browser when the dashboard first opens.
 
     useEffect(() => {
@@ -247,8 +334,6 @@ export default function DashboardShell() {
 
 
 
-
-
     const loadDashboard = async () => {
 
         try {
@@ -269,6 +354,8 @@ export default function DashboardShell() {
 
                 stats,
 
+                fundsData,
+
                 transactions,
 
                 transactionSummary
@@ -285,10 +372,11 @@ export default function DashboardShell() {
 
                 getDashboardStats(),
 
+                getFunds(),
+
                 getTransactions(),
 
                 getTransactionSummary(),
-
 
 
             ]
@@ -306,6 +394,8 @@ export default function DashboardShell() {
             setPaidBills(paid);
 
             setDashBoardStats(stats);
+
+            setFunds(fundsData);
 
             setTransactions(transactions);
 
@@ -362,9 +452,6 @@ export default function DashboardShell() {
     const handleReverseTransaction = async (transactionId: number) => {
 
 
-
-
-
         try {
 
             setReverseError("");
@@ -400,14 +487,16 @@ export default function DashboardShell() {
     }
 
 
+    const selectedTransaction = transactions.find(
+        (transaction) => transaction.id === transactionToReverse
+    );
+
+    const isAdjustment = selectedTransaction?.type === "ADJUSTMENT";
+
 
     return (
 
         <main className="flex h-dvh overflow-hidden bg-slate-50 text-slate-900">
-
-
-
-
 
 
 
@@ -419,15 +508,11 @@ export default function DashboardShell() {
 
             </aside>
 
-
-
             {/* Mobile sidebar */}
 
             {isMobileMenuOpen && (
 
                 <div className="fixed inset-0 z-50 md:hidden">
-
-
 
                     <div
 
@@ -437,11 +522,7 @@ export default function DashboardShell() {
 
                     />
 
-
-
                     <aside className="relative h-full w-16 bg-white shadow-xl">
-
-
 
                         <button
 
@@ -481,11 +562,7 @@ export default function DashboardShell() {
 
                 </div>
 
-
-
                 <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto lg:overflow-hidden">
-
-
 
                     <section className="lg:shrink-0">
 
@@ -619,11 +696,11 @@ export default function DashboardShell() {
 
 
 
-                    <section className="hidden gap-4 lg:grid lg:grid-cols-3 lg:shrink-0">
+                    <section className="hidden gap-4 lg:grid lg:grid-cols-6 lg:shrink-0">
 
                         <DashboardCard
 
-                            title="Current balance"
+                            title="Total balance"
 
                             className="w-full justify-self-center p-3"
 
@@ -639,7 +716,7 @@ export default function DashboardShell() {
 
                             >
 
-                                <div className="mt-3 border-t-4 border-green-500 pt-3">
+                                <div className="mt-3 border-t-4 border-black pt-3">
 
                                     {isLoadingAccount ? (
 
@@ -683,7 +760,7 @@ export default function DashboardShell() {
 
 
 
-                                            <p className="mt-1 text-xs text-green-600">
+                                            <p className="mt-1 text-xs text-black-600">
 
                                                 Current active balance
 
@@ -710,10 +787,78 @@ export default function DashboardShell() {
                         </DashboardCard>
 
 
+                        <DashboardCard
+
+                            title="Main Account Balance"
+
+                            className="w-full justify-self-center p-3"
+
+                        >
+
+                            <div className="mt-3 border-t-4 border-blue-500 pt-3">
+
+                                {isLoadingAccount ? (
+
+                                    <p className="text-xl font-bold">Loading...</p>
+
+                                ) : stats.accountBalance === null ? (
+
+                                    <p className="text-xl font-bold">$0</p>
+
+                                ) : (
+
+                                    <>
+
+                                        <div className="flex items-center justify-between">
+
+                                            <p className="text-2xl font-bold">
+
+                                                ${stats.accountBalance}
+
+                                            </p>
 
 
 
-                        <DashboardCard title="Total unpaid bills" className="max-w-[1500px] p-3">
+                                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100">
+
+                                                <HandCoins className="h-5 w-5 text-orange-600" />
+
+                                            </div>
+
+                                        </div>
+
+
+
+                                        <p
+
+                                            className={`mt-1 text-xs ${stats.accountBalance < 0
+
+                                                ? "text-red-600"
+
+                                                : "text-blue-600"
+
+                                                }`}
+
+                                        >
+
+                                            {stats.accountBalance < 0
+
+                                                ? `$${Math.abs(stats.accountBalance)} beyond available funds`
+
+                                                : "Includes unpaid bills and spendable money"}
+
+                                        </p>
+
+                                    </>
+
+                                )}
+
+                            </div>
+
+                        </DashboardCard>
+
+
+                        <DashboardCard title="Total bills due" subtitle={`(${currentMonth})`} className="max-w-[1500px] p-3 [&_h3_span]:block">
 
                             <div className="mt-3 border-t-4 border-orange-500 pt-3">
 
@@ -748,9 +893,6 @@ export default function DashboardShell() {
                                 ) : (
 
                                     <>
-
-
-
 
 
                                         <div className="flex items-center justify-between">
@@ -799,7 +941,7 @@ export default function DashboardShell() {
 
                         >
 
-                            <div className="mt-3 border-t-4 border-blue-500 pt-3">
+                            <div className="mt-3 border-t-4 border-green-500 pt-3">
 
                                 {isLoadingAccount ? (
 
@@ -861,13 +1003,10 @@ export default function DashboardShell() {
 
                         </DashboardCard>
 
-
-
+                        {fundCards}
 
 
                     </section>
-
-
 
                     <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
 
@@ -877,21 +1016,17 @@ export default function DashboardShell() {
 
 
 
-                        <section className="grid grid-cols-3 gap-4 mx-auto max-w-[1500px] lg:hidden">
+                        <section className="grid grid-cols-2 gap-4 mx-auto max-w-[1500px] lg:hidden">
 
-                            <DashboardCard title="Current balance" className="max-w-[250px] p-3">
+                                                        <DashboardCard title="Total balance" className="max-w-[250px] p-3">
 
                                 <button
 
                                     type="button"
 
-
-
                                     // Opens modal when card is clicked.
 
                                     onClick={() => setIsStartingBalanceModalOpen(true)}
-
-
 
                                     className="w-full text-left"
 
@@ -905,24 +1040,13 @@ export default function DashboardShell() {
 
                                                 <p className="text-xl font-bold">Not set</p>
 
-
-
                                                 <p
-
-
-
-
-
                                                     // Opens the modal when clicked.
 
                                                     onClick={() => setIsStartingBalanceModalOpen(true)}
-
-
-
                                                     className="mt-1 text-xs font-medium text-blue-600 hover:underline"
 
                                                 >
-
                                                     Set starting balance
 
                                                 </p>
@@ -939,9 +1063,7 @@ export default function DashboardShell() {
 
                                                 </p>
 
-
-
-                                                <p className="mt-1 text-xs text-green-600">
+                                                <p className="mt-1 text-xs text-black">
 
                                                     Current active balance
 
@@ -967,9 +1089,77 @@ export default function DashboardShell() {
 
                             </DashboardCard>
 
+                            <DashboardCard
+
+                                title="Main Account Balance"
+
+                                className="w-full justify-self-center p-3"
+
+                            >
+
+                                <div className="mt-3 border-t-4 border-blue-500 pt-3">
+
+                                    {isLoadingAccount ? (
+
+                                        <p className="text-xl font-bold">Loading...</p>
+
+                                    ) : stats.accountBalance === null ? (
+
+                                        <p className="text-xl font-bold">$0</p>
+
+                                    ) : (
+
+                                        <>
+
+                                            <div className="flex items-center justify-between">
+
+                                                <p className="text-2xl font-bold">
+
+                                                    ${stats.accountBalance}
+
+                                                </p>
 
 
-                            <DashboardCard title="Total unpaid bills" className="max-w-[1500px] p-3">
+
+                                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100">
+
+                                                    <HandCoins className="h-5 w-5 text-orange-600" />
+
+                                                </div>
+
+                                            </div>
+
+
+
+                                            <p
+
+                                                className={`mt-1 text-xs ${stats.accountBalance < 0
+
+                                                    ? "text-red-600"
+
+                                                    : "text-blue-600"
+
+                                                    }`}
+
+                                            >
+
+                                                {stats.accountBalance < 0
+
+                                                    ? `$${Math.abs(stats.accountBalance)} beyond available funds`
+
+                                                    : "Includes unpaid bills and spendable money"}
+
+                                            </p>
+
+                                        </>
+
+                                    )}
+
+                                </div>
+
+                            </DashboardCard>
+
+                            <DashboardCard title="Total bills due" subtitle={`(${currentMonth})`} className="max-w-[1500px] p-3">
 
                                 <div className="mt-3 border-t-4 border-orange-500 pt-3">
 
@@ -1029,14 +1219,13 @@ export default function DashboardShell() {
 
 
 
-                            <DashboardCard title="Spendable money" className="max-w-[1500px] justify-self-center p-3">
+                            <DashboardCard title="Spendable money" className="max-w-[250px] p-3">
 
                                 <div className="mt-3 border-t-4 border-blue-500 pt-3">
 
                                     {isLoadingAccount ? (
 
                                         <>
-
                                             <p className="text-xl font-bold">Loading...</p>
 
                                         </>
@@ -1044,10 +1233,7 @@ export default function DashboardShell() {
                                     ) : stats.spendableAmount === null ? (
 
                                         <>
-
                                             <p className="text-xl font-bold">$0</p>
-
-
 
                                         </>
 
@@ -1078,11 +1264,9 @@ export default function DashboardShell() {
                                 </div>
 
                             </DashboardCard>
+                            {fundCards}
 
                         </section>
-
-
-
 
 
                         <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
@@ -1144,27 +1328,16 @@ export default function DashboardShell() {
                                         <div className="space-y-3">
 
                                             {transactions.map((transaction) => (
-
                                                 <div
-
                                                     key={transaction.id}
-
                                                     className="flex items-center justify-between rounded-xl border border-slate-200 p-2"
-
                                                 >
-
-                                                    <div>
-
+                                                    <div className="min-w-0 flex-1">
                                                         <p className="font-medium text-slate-900">
-
                                                             {transaction.name}
-
                                                         </p>
 
-
-
                                                         <p className="text-xs text-slate-500">
-
                                                             {transaction.transactionDate}
 
                                                             {" • "}
@@ -1183,75 +1356,45 @@ export default function DashboardShell() {
 
                                                             {transaction.category}
 
-
-
-                                                            {transaction.autoPaid ? (
-
-                                                                <span className="m-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-
-                                                                    Auto-paid
-
-                                                                </span>
-
-                                                            ) :
-
-                                                                <button
-
-                                                                    type="button"
-
-                                                                    onClick={() => {
-
-                                                                        setTransactionToReverse(transaction.id);
-
-                                                                        setReverseReason("");
-
-                                                                        setReverseError("");
-
-                                                                    }}
-
-                                                                    className=" m-2 rounded-lg bg-orange-300 px-3 py-1 text-xs font-medium text-white hover:bg-orange-400"
-
-                                                                >
-
-                                                                    Reverse
-
-                                                                </button>
-
-                                                            }
-
+                                                            {" • "}
+                                                            <span className="text-slate-600">
+                                                                {transaction.fundName}
+                                                            </span>
                                                         </p>
-
-
-
                                                     </div>
 
-
-
-                                                    <div className="flex items-center gap-3">
-
+                                                    <div className="flex shrink-0 flex-col items-end gap-2">
                                                         <p
-
                                                             className={`font-semibold ${transaction.type === "INFLOW"
-
                                                                 ? "text-green-600"
-
                                                                 : "text-orange-600"
-
                                                                 }`}
-
                                                         >
-
                                                             ${transaction.amount.toFixed(2)}
-
                                                         </p>
 
-                                                    </div >
+                                                        {transaction.autoPaid ? (
+                                                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                                                                Auto-paid
+                                                            </span>
+                                                        ) : (
 
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setTransactionToReverse(transaction.id);
+                                                                    setReverseReason("");
+                                                                    setReverseError("");
+                                                                }}
+                                                                className="rounded-lg bg-orange-300 px-3 py-1 text-xs font-medium text-white hover:bg-orange-400"
+                                                            >
+                                                                Reverse
+                                                            </button>
 
+                                                        )}
+                                                    </div>
 
                                                 </div>
-
-
 
                                             ))}
 
@@ -1270,11 +1413,8 @@ export default function DashboardShell() {
                             <DashboardCard
 
                                 title="Upcoming Bills"
-
-                                subtitle={`(${currentMonth})`}
-
+                                subtitle="(Next 30 days)"
                                 tittle_color="text-blue-700"
-
                                 className="w-full justify-self-center p-3">
 
                                 <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1">
@@ -1372,6 +1512,8 @@ export default function DashboardShell() {
                                                                 setAmountPaid("");
 
                                                                 setPaymentError("");
+
+                                                                setPaymentFundId(bill.fundId ?? null);
 
                                                             }}
 
@@ -1506,6 +1648,7 @@ export default function DashboardShell() {
                                                                 setAmountPaid("");
 
                                                                 setPaymentError("");
+                                                                setPaymentFundId(bill.fundId ?? null);
 
                                                             }}
 
@@ -1645,8 +1788,6 @@ export default function DashboardShell() {
 
                                     </div>
 
-
-
                                     <p className="mt-1.5 text-[11px] text-slate-500">
 
                                         Recorded through {formatDate(new Date())}
@@ -1656,8 +1797,6 @@ export default function DashboardShell() {
                                 </div>
 
                             </DashboardCard>
-
-
 
                             <DashboardCard
 
@@ -1794,21 +1933,13 @@ export default function DashboardShell() {
 
                         });
 
-
-
                         if (!response.ok) {
 
                             throw new Error("Failed to update balance");
 
                         }
 
-
-
                         const updatedAccount = await response.json();
-
-
-
-
 
                         setIsStartingBalanceModalOpen(false);
 
@@ -1826,6 +1957,7 @@ export default function DashboardShell() {
 
                 <BillsModal
 
+                    funds={funds}
                     onClose={() => setIsBillsModalOpen(false)}
 
                     onSaveSuccess={async () => {
@@ -1936,7 +2068,29 @@ export default function DashboardShell() {
 
                         </div>
 
+                        <div className="mt-4">
+                            <label className="block text-sm font-medium text-slate-700">
+                                Pay from
+                            </label>
 
+                            <select
+                                value={paymentFundId ?? ""}
+                                onChange={(e) =>
+                                    setPaymentFundId(
+                                        e.target.value === "" ? null : Number(e.target.value)
+                                    )
+                                }
+                                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            >
+                                <option value="">Main Balance</option>
+
+                                {funds.map((fund) => (
+                                    <option key={fund.id} value={fund.id}>
+                                        {fund.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
                         <div className="mt-6 flex justify-end gap-3">
 
@@ -1958,7 +2112,9 @@ export default function DashboardShell() {
 
                             <button
 
-                                type="button" onClick={() => handleMarkAsPaid(billToPay.id, paidDate, Number(amountPaid))
+                                type="button" onClick={() =>
+
+                                    handleMarkAsPaid(billToPay.id, paidDate, Number(amountPaid), paymentFundId)
 
                                 }
 
@@ -1979,20 +2135,18 @@ export default function DashboardShell() {
             )}
 
 
-
-
-
-
-
             {
 
                 isSpendingsModalOpen && (
 
                     <SpendingModal
 
+                        funds={funds}
+
                         onClose={() => setIsSpendingsModalOpen(false)}
 
                         onSaveSuccess={async () => {
+
 
                             await loadDashboard();
 
@@ -2041,102 +2195,131 @@ export default function DashboardShell() {
             }
 
 
-
             {transactionToReverse !== null && (
-
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
 
-                    <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-lg">
+                        {isAdjustment ? (
+                            <>
+                                <h3 className="text-lg font-semibold text-slate-900">
+                                    Balance Adjustment
+                                </h3>
 
-                        <h2 className="text-lg font-semibold text-slate-900">
+                                <p className="mt-3 text-sm text-slate-600">
+                                    Balance adjustments cannot be reversed or deleted.
+                                    To correct your balance, create a new adjustment
+                                    with the correct amount. Your previous adjustment
+                                    will remain in your transaction history.
+                                </p>
 
-                            Reverse transaction?
+                                <div className="mt-6 flex justify-end gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setTransactionToReverse(null);
+                                            setReverseReason("");
+                                            setReverseError("");
+                                        }}
+                                        className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                                    >
+                                        Close
+                                    </button>
 
-                        </h2>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setTransactionToReverse(null);
+                                            setReverseReason("");
+                                            setReverseError("");
+                                            setIsStartingBalanceModalOpen(true);
+                                        }}
+                                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                                    >
+                                        Adjust Balance
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <h3 className="text-lg font-semibold text-slate-900">
+                                    Reverse Transaction
+                                </h3>
 
+                                <p className="mt-2 text-sm text-slate-600">
+                                    Please provide a reason for reversing this transaction.
+                                </p>
 
+                                <textarea
+                                    value={reverseReason}
+                                    onChange={(e) => setReverseReason(e.target.value)}
+                                    placeholder="Reason for reversal"
+                                    className="mt-4 w-full rounded-lg border border-slate-300 p-3 text-sm"
+                                    rows={3}
+                                />
 
-                        <p className="mt-2 text-sm text-slate-600">
+                                {reverseError && (
+                                    <p className="mt-2 text-sm text-red-600">
+                                        {reverseError}
+                                    </p>
+                                )}
 
-                            Please provide a reason for reversing this transaction.
+                                <div className="mt-6 flex justify-end gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setTransactionToReverse(null);
+                                            setReverseReason("");
+                                            setReverseError("");
+                                        }}
+                                        className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                                    >
+                                        Cancel
+                                    </button>
 
-                        </p>
-
-
-
-                        <textarea
-
-                            value={reverseReason}
-
-                            onChange={(e) => setReverseReason(e.target.value)}
-
-                            placeholder="Reason for reversal"
-
-                            className="mt-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-
-                        />
-
-
-
-                        {reverseError && (
-
-                            <p className="mt-2 text-sm text-red-600">
-
-                                {reverseError}
-
-                            </p>
-
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            handleReverseTransaction(transactionToReverse)
+                                        }
+                                        className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                                    >
+                                        Reverse
+                                    </button>
+                                </div>
+                            </>
                         )}
 
-
-
-                        <div className="mt-6 flex justify-end gap-3">
-
-                            <button
-
-                                type="button"
-
-                                onClick={() => {
-
-                                    setTransactionToReverse(null);
-
-                                    setReverseReason("");
-
-                                    setReverseError("");
-
-                                }}
-
-                                className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
-
-                            >
-
-                                Cancel
-
-                            </button>
-
-
-
-                            <button
-
-                                type="button"
-
-                                onClick={() => handleReverseTransaction(transactionToReverse)}
-
-                                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-
-                            >
-
-                                Reverse
-
-                            </button>
-
-                        </div>
-
                     </div>
-
                 </div>
-
             )}
+
+            <CreateFundModal
+                open={createFundOpen}
+                onClose={() => setCreateFundOpen(false)}
+                onCreate={handleCreateFund}
+            />
+
+            <AllocateFundModal
+                key={`allocate-${selectedFund?.id ?? "none"}`}
+                fund={fundAction === "allocate" ? selectedFund : null}
+                availableBalance={availableBalance}
+                onClose={() => {
+                    setSelectedFund(null);
+                    setFundAction(null);
+                }}
+                onAllocate={handleAllocateFund}
+            />
+
+            <ReleaseFundModal
+                key={`release-${selectedFund?.id ?? "none"}`}
+                fund={fundAction === "release" ? selectedFund : null}
+                onClose={() => {
+                    setSelectedFund(null);
+                    setFundAction(null);
+                }}
+                onRelease={handleReleaseFund}
+            />
+
 
         </main >
 

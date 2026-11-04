@@ -14,6 +14,7 @@ function mapBillRequest(bill: BillRequest) {
     startDate: bill.startDate,
     autoPay: bill.autoPay,
     paymentType: bill.paymentType,
+    fundId: bill.fundId,
   };
 }
 
@@ -45,7 +46,7 @@ export async function createBills(bills: BillRequest[]) {
     },
     body: JSON.stringify(bills.map(mapBillRequest)),
   });
- 
+
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -61,61 +62,65 @@ function getToday(): string {
 }
 
 export async function getUpcomingBills() {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
-    const response = await fetch(`${API_BASE_URL}/api/bill_record`, {
-        method: "GET",
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
-        },
-    });
+  const response = await fetch(`${API_BASE_URL}/api/bill_record`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
+    },
+  });
 
-    if (!response.ok) {
-        throw new Error("Failed to fetch bills");
-    }
+  if (!response.ok) {
+    throw new Error("Failed to fetch bills");
+  }
 
-    return response.json();
+  return response.json();
 }
 
 export async function getPaidBills() {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
-    const response = await fetch(`${API_BASE_URL}/api/bill_record/paid`, {
-        method: "GET",
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
-        },
-    });
+  const response = await fetch(`${API_BASE_URL}/api/bill_record/paid`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
+    },
+  });
 
-    if (!response.ok) {
-        throw new Error("Failed to fetch bills");
-    }
+  if (!response.ok) {
+    throw new Error("Failed to fetch bills");
+  }
 
-    return response.json();
+  return response.json();
 }
 
 export async function getOverdueBills() {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
-    const response = await fetch(`${API_BASE_URL}/api/bill_record/overdue`, {
-        method: "GET",
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
-        },
-    });
+  const response = await fetch(`${API_BASE_URL}/api/bill_record/overdue`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
+    },
+  });
 
-    if (!response.ok) {
-        throw new Error("Failed to fetch bills");
-    }
+  if (!response.ok) {
+    throw new Error("Failed to fetch bills");
+  }
 
-    return response.json();
+  return response.json();
 }
 
 
-export async function payBill(billId: number, paidDate:string, amount:number) {
-  const response = await fetch(`${API_BASE_URL}/api/bill_record/${billId}/${paidDate}/${amount}/pay`, {
+export async function payBill(billId: number, paidDate: string, amount: number, paymentFundId: number | null) {
+
+  const url = `${API_BASE_URL}/api/bill_record/${billId}/${paidDate}/${amount}/pay`;
+  const response = await fetch(paymentFundId !== null ? `${url}?fundId=${paymentFundId}` : url, {
+
     method: "POST",
     headers: {
+
       "Content-Type": "application/json",
       Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
     }
@@ -147,8 +152,8 @@ export async function syncDashboard() {
   return response;
 }
 
-export async function processAutoPay(){
-    const response = await fetch(`${API_BASE_URL}/api/bill_record/autoPay`, {
+export async function processAutoPay() {
+  const response = await fetch(`${API_BASE_URL}/api/bill_record/autoPay`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -166,57 +171,57 @@ export async function processAutoPay(){
 
 
 export async function getAllBills() {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
 
-    const response = await fetch(`${API_BASE_URL}/api/bills/allBills`, {
-        method: "GET",
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
-        },
-    });
+  const response = await fetch(`${API_BASE_URL}/api/bills/allBills`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
+    },
+  });
 
-    if (!response.ok) {
-        throw new Error("Failed to fetch bills");
-    }
+  if (!response.ok) {
+    throw new Error("Failed to fetch bills");
+  }
 
-    return response.json();
+  return response.json();
 }
 
 export async function deactivateBill(billId: number): Promise<void> {
-    const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/bills/${billId}/deactivate`,
-        {
-            method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
-            },
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to deactivate bill");
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/bills/${billId}/deactivate`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
+      },
     }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to deactivate bill");
+  }
 }
 
 export async function updateBill(
-    billId: number,
-    request: UpdateBillRequest
+  billId: number,
+  request: UpdateBillRequest
 ): Promise<void> {
-  console.log(request," meeeeeeeeeeee")
-    const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/bills/${billId}`,
-        {
-            method: "PATCH",
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(request),
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to update bill");
+  console.log(request, " meeeeeeeeeeee")
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/bills/${billId}`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("mariver_token")}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
     }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to update bill");
+  }
 }

@@ -7,6 +7,7 @@ export type BillRequest = {
   startDate: string;
   autoPay: boolean;
   paymentType: string;
+  fundId: number | null;
 };
 
 export type BillResponse = {
@@ -20,6 +21,7 @@ export type BillResponse = {
   paidDate: string | null;
   paymentType: string;
   autoPay: boolean;
+  fundId: number | null;
 };
 
 export type BillDetailsResponse = {

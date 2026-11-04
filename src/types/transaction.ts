@@ -1,4 +1,4 @@
-export type TransactionType = "INFLOW" | "OUTFLOW";
+export type TransactionType = "INFLOW" | "OUTFLOW" | "ADJUSTMENT";
 
 export type TransactionStatus = "POSTED" | "DELETED";
 
@@ -12,6 +12,8 @@ export interface TransactionRequest {
   category: string;
   transactionSource: string;
   transactionDate: string;
+  fundId: number | null;
+  
 }
 
 export interface TransactionResponse {
@@ -25,6 +27,7 @@ export interface TransactionResponse {
   transactionDate: string;
   status: TransactionStatus;
   createdAt: string;
+  fundName: string;
   autoPaid: boolean;
 }
 
